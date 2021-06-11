@@ -6,6 +6,9 @@ WP_ENV=$3
 WP_CACHED_ENV="/var/www/html/wp-content/${WP_ENV}.sql"
 SKIP_CACHE=$4
 
+echo "EMINEM"
+echo WP_ENV
+
 init_environment(){
 	#Setup core
 	wp --allow-root core update --version=$WP_VERSION
