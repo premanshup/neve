@@ -17,21 +17,15 @@
 }
 
 @mixin grid-container--tablet() {
-  .container {
-    max-width: 720px;
-  }
+
 }
 
 @mixin grid-container--laptop() {
-  .container {
-    max-width: 960px;
-  }
+
 }
 
 @mixin grid-container--desktop() {
-  .container {
-    max-width: 1170px;
-  }
+
 }
 
 .container-fluid {
@@ -42,7 +36,6 @@
     margin: 0 -15px;
   }
 }
-
 .row {
   display: flex;
   flex-wrap: wrap;

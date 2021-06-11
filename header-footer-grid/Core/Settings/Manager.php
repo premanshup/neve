@@ -9,7 +9,9 @@
  */
 
 namespace HFG\Core\Settings;
+
 use Neve\Customizer\Controls\Tabs;
+use Neve\Core\Settings\Mods;
 
 /**
  * Class Manager
@@ -102,7 +104,7 @@ class Manager {
 	/**
 	 * Load settings/control group in customizer.
 	 *
-	 * @param null                       $group             Group to load.
+	 * @param null                       $group Group to load.
 	 * @param \WP_Customize_Manager|null $customize_manager Manager object.
 	 *
 	 * @return \WP_Customize_Manager Customizer object.
@@ -201,11 +203,6 @@ class Manager {
 				'sanitize_callback' => 'wp_filter_nohtml_kses',
 			)
 		);
-
-		// if ( $group === 'footer-one-widgets' ) {
-		// var_dump(  $group );
-		// var_dump(  $this->get_tabs_group( $group ) );
-		// }
 		$customize_manager->add_control(
 			new Tabs(
 				$customize_manager,
@@ -220,10 +217,11 @@ class Manager {
 	/**
 	 * Utility method to define existing controls for component tabs.
 	 *
-	 * @since   1.0.1
-	 * @access  public
 	 * @param string $id The ID for the tab.
 	 * @param array  $tabs List of tab and controls to use.
+	 *
+	 * @since   1.0.1
+	 * @access  public
 	 */
 	public function add_controls_to_tabs( $id, $tabs = array() ) {
 		self::$tabs[ $id ] = array_merge_recursive(
@@ -266,7 +264,7 @@ class Manager {
 	 * It's using this format `post<component_id|builder_id|row_id>`.
 	 *
 	 * @param string $transport Transport type.
-	 * @param string $id        Component id.
+	 * @param string $id Component id.
 	 *
 	 * @return string Core transport.
 	 */
@@ -323,17 +321,34 @@ class Manager {
 			}
 			self::$groups[ $arguments['group'] ][] = $id;
 
-			if ( isset( $arguments['tab'] ) && in_array( $arguments['tab'], array( self::TAB_GENERAL, self::TAB_LAYOUT, self::TAB_STYLE ), true ) ) {
+			if ( isset( $arguments['tab'] ) && in_array(
+				$arguments['tab'],
+				array(
+					self::TAB_GENERAL,
+					self::TAB_LAYOUT,
+					self::TAB_STYLE,
+				),
+				true
+			) ) {
 				if ( ! isset( self::$tabs[ $arguments['group'] ][ $arguments['tab'] ] ) ) {
 					self::$tabs[ $arguments['group'] ][ $arguments['tab'] ] = [];
 				}
 				self::$tabs[ $arguments['group'] ][ $arguments['tab'] ][ $id ] = array();
 			}
 		}
+		if ( isset( $arguments['use_dynamic_fields'] ) ) {
+			add_filter(
+				'neve_react_controls_localization',
+				function ( $array ) use ( $arguments ) {
+					$array['dynamicTags']['controls'][ $arguments['group'] . '_' . $arguments['id'] ] = $arguments['use_dynamic_fields'];
 
+					return $array;
+				}
+			);
+		}
 		if ( isset( $arguments['live_refresh_selector'] ) ) {
 			add_filter(
-				'neve_hfg_preview_localization_filter',
+				'neve_customize_preview_localization',
 				function ( $array ) use ( $arguments ) {
 					if ( ! isset( $array[ $arguments['type'] ] ) ) {
 						$array[ $arguments['type'] ] = [];
@@ -351,6 +366,26 @@ class Manager {
 			);
 		}
 
+		if ( isset( $arguments['conditional_header'] ) && $arguments['conditional_header'] === true ) {
+			add_filter(
+				'neve_react_controls_localization',
+				function ( $array ) use ( $id ) {
+					$array['headerControls'][] = $id;
+
+					return $array;
+				}
+			);
+			if ( defined( 'NEVE_PRO_VERSION' ) ) {
+				add_filter(
+					'neve_pro_react_controls_localization',
+					function ( $array ) use ( $id ) {
+						$array['headerControls'][] = $id;
+
+						return $array;
+					}
+				);
+			}
+		}
 
 		self::$settings[ $id ] = array_merge(
 			$arguments,
@@ -376,22 +411,41 @@ class Manager {
 	}
 
 	/**
+	 * Return registered default.
+	 *
+	 * @param string $id Setting id.
+	 * @param null   $subkey Subkey, if any.
+	 *
+	 * @return mixed|null
+	 */
+	public function get_default( $id, $subkey = null ) {
+		return isset( self::$settings[ $id ]['default'] )
+				? ( $subkey === null
+				? self::$settings[ $id ]['default']
+				: ( isset( self::$settings[ $id ]['default'][ $subkey ] )
+					? self::$settings[ $id ]['default'][ $subkey ]
+					: null
+				) )
+				: null;
+	}
+
+	/**
 	 * Get setting value based on context.
 	 *
-	 * @param string $id      Setting id.
+	 * @param string $id Setting id.
 	 * @param mixed  $default Default value.
 	 *
 	 * @return mixed Mod value.
 	 */
 	public function get( $id, $default = null ) {
 		if ( null !== $default ) {
-			return get_theme_mod( $id, $default );
+			return Mods::get( $id, $default );
 		}
 		if ( isset( self::$settings[ $id ]['preview_default'] ) && is_customize_preview() ) {
-			return get_theme_mod( $id, self::$settings[ $id ]['preview_default'] );
+			return Mods::get( $id, self::$settings[ $id ]['preview_default'] );
 		}
 		if ( isset( self::$settings[ $id ]['default'] ) ) {
-			return get_theme_mod( $id, self::$settings[ $id ]['default'] );
+			return Mods::get( $id, self::$settings[ $id ]['default'] );
 		}
 
 		return get_theme_mod( $id );

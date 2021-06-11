@@ -7,6 +7,8 @@
 
 namespace Neve\Compatibility;
 
+use Neve\Core\Settings\Config;
+
 /**
  * Class Lifter
  *
@@ -35,7 +37,7 @@ class Lifter {
 			a.llms-button-action:hover,
 			a.llms-button-action:active,
 			a.llms-button-action:focus,
-			button.llms-button-action:hover, 
+			button.llms-button-action:hover,
 			button.llms-button-action:active,
 			button.llms-button-action:focus',
 	);
@@ -80,12 +82,12 @@ class Lifter {
 		remove_action( 'lifterlms_after_main_content', 'lifterlms_output_content_wrapper_end', 10 );
 		remove_all_actions( 'lifterlms_sidebar' );
 
-		add_action( 'lifterlms_before_main_content', array( $this, 'content_wrapper_open' ), 0 );
-		add_action( 'lifterlms_after_main_content', array( $this, 'content_wrapper_close' ), PHP_INT_MAX );
+		add_action( 'lifterlms_before_loop', array( $this, 'content_wrapper_open' ), 0 );
+		add_action( 'lifterlms_after_loop', array( $this, 'content_wrapper_close' ), 100 );
 		add_filter( 'lifterlms_show_page_title', '__return_false' );
 
 		add_action( 'neve_llms_content', array( $this, 'content_open' ), 10 );
-		add_action( 'lifterlms_after_main_content', array( $this, 'content_close' ), 10 );
+		add_action( 'lifterlms_after_loop', array( $this, 'content_close' ), 10 );
 
 		add_action( 'widgets_init', array( $this, 'register_catalog_sidebar' ) );
 		add_filter( 'llms_get_theme_default_sidebar', array( $this, 'lms_sidebar' ) );
@@ -98,121 +100,137 @@ class Lifter {
 	 * Add inline selectors for LifterLMS.
 	 */
 	private function add_inline_selectors() {
-		add_filter( 'neve_button_color_filter', array( $this, 'add_button_color' ) );
-		add_filter( 'neve_button_hover_color_filter', array( $this, 'add_button_hover_color' ) );
-		add_filter( 'neve_button_border_radius_selectors_filter', array( $this, 'add_button_border_radius' ) );
-		add_filter( 'neve_button_padding_selectors', array( $this, 'add_button_padding_selectors' ), 10, 2 );
 
-		add_filter( 'neve_secondary_button_color_filter', array( $this, 'add_secondary_button_color' ) );
-		add_filter( 'neve_secondary_button_hover_color_filter', array( $this, 'add_secondary_button_hover_color' ) );
 		add_filter(
-			'neve_secondary_button_border_radius_selectors_filter',
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_PRIMARY_NORMAL,
 			array(
 				$this,
-				'add_secondary_button_border_radius',
-			)
+				'add_primary_btns_normal',
+			),
+			10,
+			1
 		);
+		add_filter(
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_PRIMARY_HOVER,
+			array(
+				$this,
+				'add_primary_btns_hover',
+			),
+			10,
+			1
+		);
+		add_filter(
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_PRIMARY_PADDING,
+			array(
+				$this,
+				'add_primary_btns_padding',
+			),
+			10,
+			1
+		);
+
+
+		add_filter(
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_SECONDARY_NORMAL,
+			array(
+				$this,
+				'add_secondary_btns_normal',
+			),
+			10,
+			1
+		);
+		add_filter(
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_SECONDARY_HOVER,
+			array(
+				$this,
+				'add_secondary_btns_hover',
+			),
+			10,
+			1
+		);
+		add_filter(
+			'neve_selectors_' . Config::CSS_SELECTOR_BTN_SECONDARY_PADDING,
+			array(
+				$this,
+				'add_secondary_btns_padding',
+			),
+			10,
+			1
+		);
+
 	}
 
 	/**
-	 * Add button color colors.
+	 * Add primary btn selectors for padding.
 	 *
-	 * @param array $color_setup the color setup from Neve\Views\Inline\Colors.
-	 *
-	 * @return array
-	 */
-	public function add_button_color( $color_setup ) {
-		$color_setup['background']['selectors'] .= $this->primary_buttons_selectors['default'];
-
-		return $color_setup;
-	}
-
-	/**
-	 * Add button hover color.
-	 *
-	 * @param array $color_setup the color setup from Neve\Views\Inline\Colors.
-	 *
-	 * @return array
-	 */
-	public function add_button_hover_color( $color_setup ) {
-		$color_setup['background']['selectors'] .= $this->primary_buttons_selectors['hover'];
-
-		return $color_setup;
-	}
-
-	/**
-	 * Add button border radius.
-	 *
-	 * @param string $selectors the color setup from Neve\Views\Inline\Colors.
+	 * @param string $selectors Current CSS selectors.
 	 *
 	 * @return string
 	 */
-	public function add_button_border_radius( $selectors ) {
-		$selectors .= $this->primary_buttons_selectors['default'];
+	public function add_primary_btns_padding( $selectors ) {
+		return ( $selectors . $this->primary_buttons_selectors['default'] );
 
-		return $selectors;
 	}
 
 	/**
-	 * Add buttons paddings.
+	 * Add primary btn selectors for padding.
 	 *
-	 * @param string $selectors css selectors.
-	 * @param string $theme_mod theme mod key.
+	 * @param string $selectors Current CSS selectors.
 	 *
 	 * @return string
 	 */
-	public function add_button_padding_selectors( $selectors, $theme_mod ) {
-		if ( $theme_mod === 'neve_button_padding' ) {
-			$selectors .= $this->primary_buttons_selectors['default'];
-		}
+	public function add_secondary_btns_padding( $selectors ) {
+		return ( $selectors . $this->secondary_buttons_selectors['default'] );
 
-		if ( $theme_mod === 'neve_secondary_button_padding' ) {
-			$selectors .= $this->secondary_buttons_selectors['default'];
-		}
-
-		return $selectors;
 	}
 
 	/**
-	 * Add secondary button color.
+	 * Add primary btn selectors.
 	 *
-	 * @param array $color_setup the color setup from Neve\Views\Inline\Colors.
-	 *
-	 * @return array
-	 */
-	public function add_secondary_button_color( $color_setup ) {
-		$color_setup['color']['selectors']        .= $this->secondary_buttons_selectors['default'];
-		$color_setup['border-color']['selectors'] .= $this->secondary_buttons_selectors['default'];
-
-		return $color_setup;
-	}
-
-	/**
-	 * Add secondary button hover color.
-	 *
-	 * @param array $color_setup the color setup from Neve\Views\Inline\Colors.
-	 *
-	 * @return array
-	 */
-	public function add_secondary_button_hover_color( $color_setup ) {
-		$color_setup['color']['selectors']        .= $this->secondary_buttons_selectors['hover'];
-		$color_setup['border-color']['selectors'] .= $this->secondary_buttons_selectors['hover'];
-
-		return $color_setup;
-	}
-
-	/**
-	 * Add secondary button border radius.
-	 *
-	 * @param string $selectors the color setup from Neve\Views\Inline\Colors.
+	 * @param string $selectors Current CSS selectors.
 	 *
 	 * @return string
 	 */
-	public function add_secondary_button_border_radius( $selectors ) {
-		$selectors .= $this->secondary_buttons_selectors['default'];
-
-		return $selectors;
+	public function add_primary_btns_normal( $selectors ) {
+		return ( $selectors . $this->primary_buttons_selectors['default'] );
 	}
+
+	/**
+	 * Add primary btn selectors.
+	 *
+	 * @param string $selectors Current CSS selectors.
+	 *
+	 * @return string
+	 */
+	public function add_primary_btns_hover( $selectors ) {
+		return ( $selectors . $this->primary_buttons_selectors['hover'] );
+	}
+
+
+	/**
+	 * Add secondary btn selectors.
+	 *
+	 * @param string $selectors Current CSS selectors.
+	 *
+	 * @return string
+	 */
+	public function add_secondary_btns_normal( $selectors ) {
+		return ( $selectors . $this->secondary_buttons_selectors['default'] );
+
+	}
+
+
+	/**
+	 * Add secondary btn selectors.
+	 *
+	 * @param string $selectors Current CSS selectors.
+	 *
+	 * @return string
+	 */
+	public function add_secondary_btns_hover( $selectors ) {
+		return ( $selectors . $this->secondary_buttons_selectors['hover'] );
+	}
+
 
 	/**
 	 * Enqueue styles.

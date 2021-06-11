@@ -11,6 +11,7 @@
 namespace Neve\Customizer\Options;
 
 use Neve\Customizer\Base_Customizer;
+use Neve\Customizer\Types\Control;
 use Neve\Customizer\Types\Panel;
 use Neve\Customizer\Types\Partial;
 use Neve\Views\Header;
@@ -25,6 +26,7 @@ class Main extends Base_Customizer {
 	public function add_controls() {
 		$this->register_types();
 		$this->add_main_panels();
+		$this->add_ui();
 		$this->change_controls();
 	}
 
@@ -37,8 +39,6 @@ class Main extends Base_Customizer {
 		$this->register_type( 'Neve\Customizer\Controls\Responsive_Number', 'control' );
 		$this->register_type( 'Neve\Customizer\Controls\Tabs', 'control' );
 		$this->register_type( 'Neve\Customizer\Controls\Heading', 'control' );
-		$this->register_type( 'Neve\Customizer\Controls\Multi_Select', 'control' );
-		$this->register_type( 'Neve\Customizer\Controls\Reactive_Control', 'control' );
 		$this->register_type( 'Neve\Customizer\Controls\Checkbox', 'control' );
 		$this->register_type( 'Neve\Customizer\Controls\Upsell_Control', 'control' );
 	}
@@ -69,6 +69,31 @@ class Main extends Base_Customizer {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Adds UI control.
+	 */
+	private function add_ui() {
+		$this->add_control(
+			new Control(
+				'neve_ui_control',
+				[
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				[
+					'section' => 'static_front_page',
+					'type'    => 'neve_ui_control',
+				]
+			)
+		);
+	}
+
+	/**
+	 * Change controls
+	 */
+	protected function change_controls() {
+		$this->change_customizer_object( 'section', 'static_front_page', 'panel', 'neve_layout' );
 	}
 
 }

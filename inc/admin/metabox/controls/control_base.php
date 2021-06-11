@@ -147,20 +147,25 @@ abstract class Control_Base {
 			return;
 		}
 		if ( isset( $_POST[ $this->id ] ) ) {
-			$value = wp_unslash( $_POST[ $this->id ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
+			$value = $this->sanitize_value( wp_unslash( $_POST[ $this->id ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// Remove post meta on default.
 			if ( $value === $this->settings['default'] ) {
 				delete_post_meta( $post_id, $this->id );
 
 				return;
 			}
-
-			update_post_meta( $post_id, $this->id, $this->sanitize_value( $value ) );
+			// Update post meta on other values.
+			update_post_meta( $post_id, $this->id, $value );
 
 			return;
+		} else {
+			if ( $this->id === 'neve_meta_enable_content_width' ) {
+				update_post_meta( $post_id, 'neve_meta_enable_content_width', 'off' );
+			} else {
+				delete_post_meta( $post_id, $this->id );
+			}
+			return;
 		}
-		delete_post_meta( $post_id, $this->id );
-
 	}
 
 	/**
@@ -179,7 +184,6 @@ abstract class Control_Base {
 				}
 
 				return sanitize_text_field( $value );
-				break;
 			case 'checkbox':
 				$allowed_values = array( 'on', 'off' );
 				if ( ! in_array( $value, $allowed_values, true ) ) {
@@ -187,27 +191,28 @@ abstract class Control_Base {
 				}
 
 				return sanitize_text_field( $value );
-				break;
 			case 'range':
 				return absint( $value );
-				break;
 			case 'input':
-				return esc_url( $value );
-				break;
+				return sanitize_text_field( $value );
 			case 'separator':
 			default:
 				break;
 		}
+
+		return sanitize_text_field( $value );
 	}
 
 	/**
 	 * Get the value.
 	 *
+	 * @param int $post_id the post id.
+	 *
 	 * @return mixed
 	 */
 	final protected function get_value( $post_id ) {
-		$values = get_post_meta( $post_id );
+		$value = get_post_meta( $post_id, $this->id, true );
 
-		return isset( $values[ $this->id ] ) ? esc_attr( $values[ $this->id ][0] ) : $this->settings['default'];
+		return ! empty( $value ) ? $value : $this->settings['default'];
 	}
 }

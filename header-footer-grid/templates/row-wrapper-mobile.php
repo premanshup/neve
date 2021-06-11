@@ -12,16 +12,17 @@ namespace HFG;
 use HFG\Core\Builder\Abstract_Builder;
 use HFG\Core\Builder\Header as HeaderBuilder;
 
-$skin_mode        = row_setting( Abstract_Builder::SKIN_SETTING );
 $interaction_type = row_setting( Abstract_Builder::LAYOUT_SETTING );
-$classes          = [ 'header-menu-sidebar', 'menu-sidebar-panel', $skin_mode, $interaction_type ];
+$classes          = [ 'header-menu-sidebar', 'menu-sidebar-panel', $interaction_type ];
+$is_contained     = in_array( $interaction_type, [ 'full_canvas', 'dropdown' ], true );
+$inner_classes    = 'header-menu-sidebar-inner ' . ( $is_contained ? ' container' : '' );
 $item_attributes  = apply_filters( 'neve_nav_toggle_data_attrs', '' );
 
 ?>
 <div id="header-menu-sidebar" class="<?php echo esc_attr( join( ' ', $classes ) ); ?>">
 	<div id="header-menu-sidebar-bg" class="header-menu-sidebar-bg">
 		<div class="close-sidebar-panel navbar-toggle-wrapper">
-			<button class="navbar-toggle active" <?php echo wp_kses_post( $item_attributes ); ?>
+			<button class="navbar-toggle active" <?php echo ( $item_attributes );// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					aria-label="
 				<?php
 					esc_html_e( 'Navigation Menu', 'neve' );
@@ -39,7 +40,7 @@ $item_attributes  = apply_filters( 'neve_nav_toggle_data_attrs', '' );
 					</span>
 			</button>
 		</div>
-		<div id="header-menu-sidebar-inner" class="header-menu-sidebar-inner">
+		<div id="header-menu-sidebar-inner" class="<?php echo esc_attr( $inner_classes ); ?>">
 			<?php render_components( HeaderBuilder::BUILDER_NAME ); ?>
 		</div>
 	</div>

@@ -1,12 +1,13 @@
-.builder-item div[class*="builder-item--header_search"] {
+.search-field {
   line-height: 1;
+  flex-grow: 1;
 
-  .widget-search {
-    width: 100%;
+  input[type=submit]:hover {
+	background-color: transparent;
   }
 
-  input[type="search"] {
-    background-color: #fff;
+  .widget-search {
+	width: 100%;
   }
 }
 

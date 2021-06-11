@@ -17,7 +17,7 @@
 		 */
 		contentWidths: {
 			'neve_sitewide_content_width': {
-				content: '.neve-main > .container .col',
+				content: '.neve-main > .container .col, .neve-main > .container-fluid .col',
 				sidebar: '.nv-sidebar-wrap'
 			},
 			'neve_blog_archive_content_width': {
@@ -37,8 +37,8 @@
 				sidebar: '.single-product .shop-container .nv-sidebar-wrap'
 			},
 			'neve_other_pages_content_width': {
-				content: 'body:not(.single):not(.archive):not(.blog) .neve-main > .container .col',
-				sidebar: 'body:not(.single):not(.archive):not(.blog) .nv-sidebar-wrap'
+				content: 'body:not(.single):not(.archive):not(.blog):not(.search) .neve-main > .container .col',
+				sidebar: 'body:not(.single):not(.archive):not(.blog):not(.search) .nv-sidebar-wrap'
 			},
 		},
 

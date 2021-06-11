@@ -45,9 +45,9 @@ class Post_Layout extends Base_View {
 			)
 		);
 
-		$content_order = get_theme_mod( 'neve_layout_single_post_elements_order', json_encode( $default_order ) );
+		$content_order = get_theme_mod( 'neve_layout_single_post_elements_order', wp_json_encode( $default_order ) );
 		if ( ! is_string( $content_order ) ) {
-			$content_order = json_encode( $default_order );
+			$content_order = wp_json_encode( $default_order );
 		}
 		$content_order = json_decode( $content_order, true );
 		if ( apply_filters( 'neve_filter_toggle_content_parts', true, 'title' ) !== true ) {
@@ -64,11 +64,26 @@ class Post_Layout extends Base_View {
 			}
 		}
 
+		$content_order = apply_filters( 'neve_layout_single_post_elements_order', $content_order );
+
+
+		/** This filter is documented in header-footer-grid/templates/components/component-logo.php */
+		$should_add_skip_lazy = apply_filters( 'neve_skip_lazy', true );
+		$skip_lazy_class      = '';
+		if ( $should_add_skip_lazy ) {
+			$thumbnail_index = array_search( 'thumbnail', $content_order );
+			$content_index   = array_search( 'content', $content_order );
+			if ( $thumbnail_index < $content_index ) {
+				$skip_lazy_class = 'skip-lazy';
+			}
+		}
+
 		if ( empty( $content_order ) ) {
 			return;
 		}
 
-		foreach ( $content_order as $item ) {
+		$content_order_length = count( $content_order );
+		foreach ( $content_order as $index => $item ) {
 			switch ( $item ) {
 				case 'title-meta':
 					$this->render_entry_header();
@@ -77,7 +92,8 @@ class Post_Layout extends Base_View {
 					echo '<div class="nv-thumb-wrap">';
 					echo get_the_post_thumbnail(
 						null,
-						'neve-blog'
+						'neve-blog',
+						array( 'class' => $skip_lazy_class )
 					);
 					echo '</div>';
 					break;
@@ -96,10 +112,17 @@ class Post_Layout extends Base_View {
 					do_action( 'neve_do_tags' );
 					break;
 				case 'title':
-					echo '<h1 class="title entry-title">' . wp_kses_post( get_the_title() ) . '</h1>';
+					if ( $index !== $content_order_length - 1 && $content_order[ $index + 1 ] === 'meta' ) {
+						$this->render_entry_header();
+						break;
+					}
+					$this->render_entry_header( false );
 					break;
 				case 'meta':
-					$this->render_post_meta();
+					if ( $index !== 0 && $content_order[ $index - 1 ] === 'title' ) {
+						break;
+					}
+					self::render_post_meta();
 					break;
 				case 'author-biography':
 					do_action( 'neve_layout_single_post_author_biography' );
@@ -121,9 +144,16 @@ class Post_Layout extends Base_View {
 
 	/**
 	 * Render the post meta.
+	 *
+	 * @param bool $is_list Flag to render meta as a list or as a text.
+	 *
+	 * @return bool
 	 */
-	private function render_post_meta() {
-		$default_meta_order = json_encode(
+	public static function render_post_meta( $is_list = true ) {
+		if ( ! get_post() ) {
+			return false;
+		}
+		$default_meta_order = wp_json_encode(
 			array(
 				'author',
 				'date',
@@ -132,21 +162,27 @@ class Post_Layout extends Base_View {
 		);
 
 		$meta_order = get_theme_mod( 'neve_post_meta_ordering', $default_meta_order );
-		$meta_order = json_decode( $meta_order );
-		do_action( 'neve_post_meta_single', $meta_order );
+		$meta_order = is_string( $meta_order ) ? json_decode( $meta_order ) : $meta_order;
+		$meta_order = apply_filters( 'neve_post_meta_ordering_filter', $meta_order );
+		do_action( 'neve_post_meta_single', $meta_order, $is_list );
+		return true;
 	}
 
 	/**
 	 * Render post header
 	 *
+	 * @param bool $render_meta Render meta flag.
 	 * @return void
 	 */
-	private function render_entry_header() {
+	private function render_entry_header( $render_meta = true ) {
 		echo '<div class="entry-header">';
 		echo '<div class="nv-title-meta-wrap">';
 		do_action( 'neve_before_post_title' );
-		echo '<h1 class="title entry-title">' . wp_kses_post( get_the_title() ) . '</h1>';
-		$this->render_post_meta();
+		$alignment = apply_filters( 'neve_post_title_alignment', '' );
+		echo '<h1 class="title entry-title ' . esc_attr( $alignment ) . '">' . wp_kses_post( get_the_title() ) . '</h1>';
+		if ( $render_meta ) {
+			self::render_post_meta();
+		}
 		echo '</div>';
 		echo '</div>';
 

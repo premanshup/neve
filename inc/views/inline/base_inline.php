@@ -11,6 +11,7 @@ namespace Neve\Views\Inline;
 /**
  * Class Base_Inline
  *
+ * @deprecated Functionality replaced with the subscriber mechanism, we keep it only for compatibility with the pro version.
  * @package Neve\Views\Inline
  */
 abstract class Base_Inline {
@@ -29,6 +30,7 @@ abstract class Base_Inline {
 	 * Base_Inline constructor.
 	 */
 	final public function __construct() {
+
 		$this->init();
 	}
 
@@ -91,6 +93,9 @@ abstract class Base_Inline {
 		foreach ( $media_queries as $media_query ) {
 			$settings = $styles;
 			foreach ( $settings as $index => $setting ) {
+				if ( ! isset( $setting['value'] ) || ! isset( $setting['value'][ $media_query ] ) ) {
+					continue;
+				}
 				$settings[ $index ]['value'] = $setting['value'][ $media_query ];
 			}
 			$this->add_style( $settings, $selectors, $media_query );
@@ -158,7 +163,7 @@ abstract class Base_Inline {
 				true
 			) &&
 			! in_array( $style['value'], neve_get_standard_fonts(), true ) ) {
-			return esc_attr( $style['css_prop'] ) . ':' . '"' . esc_attr( $style['value'] ) . '"' . esc_attr( $suffix ) . ';';
+			return esc_attr( $style['css_prop'] ) . ':"' . esc_attr( $style['value'] ) . '"' . esc_attr( $suffix ) . ';';
 		}
 
 		return esc_attr( $style['css_prop'] ) . ':' . esc_attr( $style['value'] ) . esc_attr( $suffix ) . ';';

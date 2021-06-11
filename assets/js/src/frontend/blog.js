@@ -1,16 +1,15 @@
-/* jshint esversion: 6 */
-/* global NeveProperties */
-import { httpGetAsync, isInView } from '../utils.js';
+/* global NeveProperties,_wpCustomizeSettings,parent,Masonry,imagesLoaded */
+import { httpGetAsync, isInView } from '../utils';
 
-let masonryInstance = null,
-		masonryContainer = null,
-		page = 2;
+let masonryContainer = null,
+	page = 2;
+const postWrapSelector = '.nv-index-posts .posts-wrapper';
 
 /**
  * Initialize blog JS.
  */
-export const initBlog = function() {
-	if ( document.querySelector( '.blog.nv-index-posts' ) === null ) {
+export const initBlog = () => {
+	if (document.querySelector('.blog.nv-index-posts') === null) {
 		return false;
 	}
 	masonry();
@@ -19,102 +18,103 @@ export const initBlog = function() {
 
 /**
  * Handles masonry
- *
- * @returns {boolean}
  */
-const masonry = function() {
-	if ( NeveProperties.masonry !== 'enabled' || NeveProperties.masonryColumns <
-			2 ) {
-		return false;
-	}
-	masonryContainer = document.querySelector( '.nv-index-posts .posts-wrapper' );
-	imagesLoaded( masonryContainer, function() {
-		masonryInstance = new Masonry( masonryContainer, {
-			itemSelector: 'article.layout-grid',
-			columnWidth: 'article.layout-grid',
-			percentPosition: true
-		} );
-	} );
+const masonry = () => {
+	const { masonryStatus, masonryColumns, blogLayout } = NeveProperties;
 
+	if (masonryStatus !== 'enabled' || masonryColumns < 2) {
+		return;
+	}
+	masonryContainer = document.querySelector(postWrapSelector);
+
+	if (masonryContainer === null) {
+		return;
+	}
+
+	imagesLoaded(masonryContainer, () => {
+		window.nvMasonry = new Masonry(masonryContainer, {
+			itemSelector: `article.layout-${blogLayout}`,
+			columnWidth: `article.layout-${blogLayout}`,
+			percentPosition: true,
+		});
+	});
 };
 
 /**
- * Infinite scroll
- *
- * @returns {boolean}
+ * Infinite scroll.
  */
-const infiniteScroll = function() {
-	if ( NeveProperties.infiniteScroll !== 'enabled' ) {
-		return false;
+const infiniteScroll = () => {
+	if (NeveProperties.infScroll !== 'enabled') {
+		return;
 	}
 
-	isInView( document.querySelector( '.infinite-scroll-trigger' ),
-			function() {
-				if ( typeof parent.wp.customize !== 'undefined' ) {
-					parent.wp.customize.requestChangesetUpdate().then( function() {
-						requestMorePosts();
-					} );
-					return false;
-				}
+	if (document.querySelector(postWrapSelector) === null) {
+		return;
+	}
+
+	isInView(document.querySelector('.infinite-scroll-trigger'), () => {
+		if (parent.wp.customize) {
+			parent.wp.customize.requestChangesetUpdate().then(() => {
 				requestMorePosts();
-			} );
+			});
+			return false;
+		}
+		requestMorePosts();
+	});
 };
 
 /**
  * Request more posts
- * @returns {boolean}
  */
-const requestMorePosts = function() {
-	let trigger = document.querySelector( '.infinite-scroll-trigger' );
-	if ( trigger === null ) {
-		return false;
-	}
-	document.querySelector( '.nv-loader' ).style.display = 'block';
-	if ( page > NeveProperties.infiniteScrollMaxPages ) {
-		trigger.parentNode.removeChild( trigger );
-		document.querySelector( '.nv-loader' ).style.display = 'none';
-		return false;
-	}
-
-	let blog = document.querySelector( '.nv-index-posts .posts-wrapper' );
-	let requestUrl = maybeParseUrlForCustomizer(
-			NeveProperties.infiniteScrollEndpoint + page );
-	page++;
-
-	httpGetAsync( requestUrl, function(response) {
-		blog.innerHTML += JSON.parse( response );
-		refreshMasonry();
-	}, NeveProperties.infiniteScrollQuery );
-};
-
-/**
- * Refresh masonry
- */
-const refreshMasonry = function() {
-	if ( masonryInstance === null ) {
+const requestMorePosts = () => {
+	const trigger = document.querySelector('.infinite-scroll-trigger');
+	if (trigger === null) {
 		return;
 	}
-	imagesLoaded( masonryContainer ).on( 'progress', function(e) {
-		masonryInstance.layout();
-		masonryInstance.reloadItems();
-	} );
+	document.querySelector('.nv-loader').style.display = 'block';
+	if (page > NeveProperties.maxPages) {
+		trigger.parentNode.removeChild(trigger);
+		document.querySelector('.nv-loader').style.display = 'none';
+		return;
+	}
+	const blog = document.querySelector(postWrapSelector);
+	const lang = NeveProperties.lang;
+	const baseUrl = NeveProperties.endpoint + page;
+	const url = lang ? baseUrl + '/' + lang : baseUrl;
+	const requestUrl = maybeParseUrlForCustomizer(url);
+	page++;
+
+	httpGetAsync(
+		requestUrl,
+		(response) => {
+			blog.innerHTML += JSON.parse(response);
+			if (NeveProperties.masonryStatus !== 'enabled') {
+				return false;
+			}
+			window.nvMasonry.reloadItems();
+			window.nvMasonry.layout();
+		},
+		NeveProperties.query
+	);
 };
 
 /**
  * Parse in the customizer context.
- * @param url
- * @returns {*}
+ *
+ * @param {string} url
+ * @return {*} Sanitized URL.
  */
-const maybeParseUrlForCustomizer = function(url) {
+const maybeParseUrlForCustomizer = (url) => {
 	//Add change-set uuid.
-	if ( typeof wp.customize === 'undefined' ) return url;
-	url += '?customize_changeset_uuid=' + wp.customize.settings.changeset.uuid +
-			'&customize_autosaved=on';
+	if (typeof wp.customize === 'undefined') return url;
+	url +=
+		'?customize_changeset_uuid=' +
+		wp.customize.settings.changeset.uuid +
+		'&customize_autosaved=on';
 
 	//Add preview nonce.
-	if ( typeof _wpCustomizeSettings === 'undefined' ) return url;
+	if (typeof _wpCustomizeSettings === 'undefined') return url;
 	url += '&customize_preview_nonce=' + _wpCustomizeSettings.nonce.preview;
 
 	return url;
 };
-

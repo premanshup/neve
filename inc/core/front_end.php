@@ -10,6 +10,10 @@
 
 namespace Neve\Core;
 
+use Neve\Compatibility\Starter_Content;
+use Neve\Core\Settings\Config;
+use Neve\Core\Settings\Mods;
+
 /**
  * Front end handler class.
  *
@@ -17,12 +21,7 @@ namespace Neve\Core;
  */
 class Front_End {
 
-	/**
-	 * The onboarding config.
-	 *
-	 * @var array
-	 */
-	private $onboarding_config = array();
+
 
 	/**
 	 * Theme setup.
@@ -44,31 +43,29 @@ class Front_End {
 			'width'       => 200,
 		);
 
-		$custom_background_settings = array(
-			'default-color' => apply_filters( 'neve_default_background_color', 'ffffff' ),
-		);
-
 		add_theme_support( 'title-tag' );
 		add_theme_support( 'post-thumbnails' );
 		add_theme_support( 'automatic-feed-links' );
 		add_theme_support( 'custom-logo', $logo_settings );
 		add_theme_support( 'html5', array( 'search-form' ) );
 		add_theme_support( 'customize-selective-refresh-widgets' );
-		add_theme_support( 'custom-background', $custom_background_settings );
-		add_theme_support( 'themeisle-demo-import', $this->get_ti_demo_content_support_data() );
+		add_theme_support( 'custom-background', [] );
 		add_theme_support( 'align-wide' );
 		add_theme_support( 'editor-color-palette', $this->get_gutenberg_color_palette() );
 		add_theme_support( 'fl-theme-builder-headers' );
 		add_theme_support( 'fl-theme-builder-footers' );
+		add_theme_support( 'fl-theme-builder-parts' );
 		add_theme_support( 'header-footer-elementor' );
 		add_theme_support( 'lifterlms-sidebars' );
 		add_theme_support( 'lifterlms' );
-		add_theme_support( 'responsive-embeds' );
-
+		add_theme_support( 'service_worker', true );
+		add_theme_support( 'starter-content', ( new Starter_Content() )->get() );
+		add_filter( 'script_loader_tag', array( $this, 'filter_script_loader_tag' ), 10, 2 );
+		add_filter( 'embed_oembed_html', array( $this, 'wrap_oembeds' ), 10, 3 );
+		add_filter( 'video_embed_html', array( $this, 'wrap_jetpack_oembeds' ), 10, 1 );
 		add_filter( 'themeisle_gutenberg_templates', array( $this, 'add_gutenberg_templates' ) );
 
 		$this->add_amp_support();
-
 		$nav_menus_to_register = apply_filters(
 			'neve_register_nav_menus',
 			array(
@@ -82,6 +79,184 @@ class Front_End {
 		add_image_size( 'neve-blog', 930, 620, true );
 		add_filter( 'wp_nav_menu_args', array( $this, 'nav_walker' ), 1001 );
 		$this->add_woo_support();
+	}
+
+	/**
+	 * Gutenberg Block Color Palettes.
+	 *
+	 * Get the color palette in Gutenberg from Customizer colors.
+	 */
+	private function get_gutenberg_color_palette() {
+		$prefix                  = ( apply_filters( 'ti_wl_theme_is_localized', false ) ? __( 'Theme', 'neve' ) : 'Neve' ) . ' - ';
+		$gutenberg_color_palette = array();
+		$from_global_colors      = [
+			'neve-link-color'       => array(
+				'val'   => 'var(--nv-primary-accent)',
+				'label' => $prefix . __( 'Primary Accent', 'neve' ),
+			),
+			'neve-link-hover-color' => array(
+				'val'   => 'var(--nv-secondary-accent)',
+				'label' => $prefix . __( 'Secondary Accent', 'neve' ),
+			),
+			'nv-site-bg'            => array(
+				'val'   => 'var(--nv-site-bg)',
+				'label' => $prefix . __( 'Site Background', 'neve' ),
+			),
+			'nv-light-bg'           => array(
+				'val'   => 'var(--nv-light-bg)',
+				'label' => $prefix . __( 'Light Background', 'neve' ),
+			),
+			'nv-dark-bg'            => array(
+				'val'   => 'var(--nv-dark-bg)',
+				'label' => $prefix . __( 'Dark Background', 'neve' ),
+			),
+			'neve-text-color'       => array(
+				'val'   => 'var(--nv-text-color)',
+				'label' => $prefix . __( 'Text Color', 'neve' ),
+			),
+			'nv-text-dark-bg'       => array(
+				'val'   => 'var(--nv-text-dark-bg)',
+				'label' => $prefix . __( 'Text Dark Background', 'neve' ),
+			),
+			'nv-c-1'                => array(
+				'val'   => 'var(--nv-c-1)',
+				'label' => $prefix . __( 'Extra Color 1', 'neve' ),
+			),
+			'nv-c-2'                => array(
+				'val'   => 'var(--nv-c-2)',
+				'label' => $prefix . __( 'Extra Color 2', 'neve' ),
+			),
+		];
+
+		foreach ( $from_global_colors as $slug => $args ) {
+			array_push(
+				$gutenberg_color_palette,
+				array(
+					'name'  => esc_html( $args['label'] ),
+					'slug'  => esc_html( $slug ),
+					'color' => neve_sanitize_colors( $args['val'] ),
+				)
+			);
+		}
+
+		return array_values( $gutenberg_color_palette );
+	}
+
+	/**
+	 * Add AMP support
+	 */
+	private function add_amp_support() {
+		if ( ! defined( 'AMP__VERSION' ) ) {
+			return;
+		}
+		if ( version_compare( AMP__VERSION, '1.0.0', '<' ) ) {
+			return;
+		}
+		add_theme_support(
+			'amp',
+			apply_filters(
+				'neve_filter_amp_support',
+				array(
+					'paired' => true,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Add WooCommerce support
+	 */
+	private function add_woo_support() {
+		if ( ! class_exists( 'WooCommerce', false ) ) {
+			return;
+		}
+
+		$woocommerce_settings = apply_filters(
+			'neves_woocommerce_args',
+			array(
+				'product_grid' => array(
+					'default_columns' => 3,
+					'default_rows'    => 4,
+					'min_columns'     => 1,
+					'max_columns'     => 6,
+					'min_rows'        => 1,
+				),
+			)
+		);
+
+		add_theme_support( 'woocommerce', $woocommerce_settings );
+		add_theme_support( 'wc-product-gallery-zoom' );
+		add_theme_support( 'wc-product-gallery-lightbox' );
+		add_theme_support( 'wc-product-gallery-slider' );
+
+	}
+
+	/**
+	 * Adds async/defer attributes to enqueued / registered scripts.
+	 *
+	 * If #12009 lands in WordPress, this function can no-op since it would be handled in core.
+	 *
+	 * @link https://core.trac.wordpress.org/ticket/12009
+	 *
+	 * @param string $tag The script tag.
+	 * @param string $handle The script handle.
+	 *
+	 * @return string Script HTML string.
+	 */
+	public function filter_script_loader_tag( $tag, $handle ) {
+		foreach ( array( 'async', 'defer' ) as $attr ) {
+			if ( ! wp_scripts()->get_data( $handle, $attr ) ) {
+				continue;
+			}
+			// Prevent adding attribute when already added in #12009.
+			if ( ! preg_match( ":\s$attr(=|>|\s):", $tag ) ) {
+				$tag = preg_replace( ':(?=></script>):', " $attr", $tag, 1 );
+			}
+			// Only allow async or defer, not both.
+			break;
+		}
+
+		return $tag;
+	}
+
+	/**
+	 * Wrap embeds.
+	 *
+	 * @param string $markup embed markup.
+	 * @param string $url embed url.
+	 * @param array  $attr embed attributes [width/height].
+	 *
+	 * @return string
+	 */
+	public function wrap_oembeds( $markup, $url, $attr ) {
+		$sources = [
+			'youtube.com',
+			'youtu.be',
+			'cloudup.com',
+			'dailymotion.com',
+			'collegehumor.com',
+			'ted.com',
+			'vimeo.com',
+		];
+		foreach ( $sources as $source ) {
+			if ( strpos( $url, $source ) !== false ) {
+				return '<div class="nv-iframe-embed">' . $markup . '</div>';
+			}
+		}
+
+		return $markup;
+	}
+
+	/**
+	 * Wrap Jetpack embeds.
+	 * Fixes the compose module aspect ratio issue.
+	 *
+	 * @param string $markup embed markup.
+	 *
+	 * @return string
+	 */
+	public function wrap_jetpack_oembeds( $markup ) {
+		return '<div class="nv-iframe-embed">' . $markup . '</div>';
 	}
 
 	/**
@@ -99,623 +274,10 @@ class Front_End {
 		return $args;
 	}
 
-
-	/**
-	 * Reorder starter sites based on previous theme
-	 *
-	 * @return bool
-	 */
-	private function reorder_starter_sites() {
-		$previous_theme = get_theme_mod( 'ti_prev_theme' );
-		if ( empty( $previous_theme ) ) {
-			return false;
-		}
-
-		$slug_association = array(
-			'zerif-pro'      => 'neve-zelle',
-			'zerif-lite'     => 'neve-zelle',
-			'themotion'      => 'neve-themotion',
-			'themotion-lite' => 'neve-themotion',
-			'amadeus'        => 'neve-amadeus',
-			'rokophoto-lite' => 'neve-rokophoto',
-			'rokophoto'      => 'neve-rokophoto',
-			'oblique'        => 'neve-oblique',
-			'shop-isle'      => 'neve-shop',
-			'shop-isle-pro'  => 'neve-shop',
-			'lawyeria-lite'  => 'neve-lawyer',
-			'lawyeria'       => 'neve-lawyer',
-		);
-		if ( ! array_key_exists( $previous_theme, $slug_association ) ) {
-			return false;
-		}
-		if ( ! isset( $this->onboarding_config['local']['elementor'][ $slug_association[ $previous_theme ] ] ) ) {
-			return false;
-		}
-		$starter_site = $this->onboarding_config['local']['elementor'][ $slug_association[ $previous_theme ] ];
-		unset( $this->onboarding_config['local']['elementor'][ $slug_association[ $previous_theme ] ] );
-		$this->onboarding_config['local']['elementor'] = array( $slug_association[ $previous_theme ] => $starter_site ) + $this->onboarding_config['local']['elementor'];
-
-		return true;
-	}
-
-	/**
-	 * Get the themeisle demo content support data.
-	 *
-	 * @return array
-	 */
-	private function get_ti_demo_content_support_data() {
-		$theme_options           = wp_get_theme();
-		$theme_name              = apply_filters( 'ti_wl_theme_name', $theme_options->__get( 'Name' ) );
-		$onboarding_folder_url   = get_template_directory_uri() . '/onboarding';
-		$onboarding_folder_path  = get_template_directory() . '/onboarding';
-		$this->onboarding_config = array(
-			'editors'     => array(
-				'elementor',
-				'brizy',
-				'beaver builder',
-			),
-			'local'       => array(
-				'elementor' => array(
-					'neve-main'               => array(
-						'url'   => 'https://demo.themeisle.com/neve/',
-						'title' => 'Original',
-					),
-					'neve-restaurant'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-restaurant/',
-						'title'            => 'Restaurant',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587624/restaurant',
-					),
-					'neve-charity'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-charity/',
-						'title'            => 'Charity',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587605/charity',
-					),
-					'neve-vet-center'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-vet-center/',
-						'title'            => 'Vet Center',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587611/vet-center',
-					),
-					'neve-doctors'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-doctors/',
-						'title'            => 'Doctors',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587593/doctor',
-					),
-					'neve-architecture'       => array(
-						'url'              => 'https://demo.themeisle.com/neve-architecture/',
-						'title'            => 'Architecture',
-						'unsplash_gallery' => 'https://unsplash.com/collections/6802313/architecture/f59e19df059789d86d1066ea80130a87',
-					),
-					'neve-fitness'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-fitness/',
-						'title'            => 'Fitness',
-						'unsplash_gallery' => 'https://unsplash.com/collections/6800490/fitness-gym',
-					),
-					'neve-vacation-rental'    => array(
-						'url'   => 'https://demo.themeisle.com/neve-vacation-rental/',
-						'title' => 'Vacation Rental',
-					),
-					'neve-music-band'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-music-band/',
-						'title'            => 'Music Band',
-						'unsplash_gallery' => 'https://unsplash.com/collections/7338489/music/746c95e4a72ad242a07001a2ca0fa7cb',
-					),
-					'neve-wedding'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-wedding/',
-						'title'            => 'Wedding',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8116784/wedding/9afa9f6ba14422f348e1c7a49a9d51e9',
-					),
-					'neve-themotion'          => array(
-						'url'              => 'https://demo.themeisle.com/neve-themotion/',
-						'title'            => 'Video Blog',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8256651/neve-the-motion/79f8c5a63926e7cee4deed75bc6724fc',
-					),
-					'neve-amadeus'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-amadeus/',
-						'title'            => 'Music Teacher',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8271695/neve-amadeus/ba699571eb4fc205ad8385c0440ced80',
-					),
-					'neve-oblique'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-oblique/',
-						'title'            => 'Vintage',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8325788/oblique/7281d963f7b798d5fa7d6327bfd26804',
-					),
-					'neve-rokophoto'          => array(
-						'url'              => 'https://demo.themeisle.com/neve-rokophoto/',
-						'title'            => 'Photography',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8311183/rokophoto/ecebabcd40134eacf11cbd3cba504f44',
-					),
-					'neve-energy-panels'      => array(
-						'url'              => 'https://demo.themeisle.com/neve-energy-panels/',
-						'title'            => 'Energy Panels',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587602/energy-panels',
-					),
-					'neve-lawyers'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-lawyers/',
-						'title'            => 'Lawyers',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587639/neve-lawyers',
-					),
-					'neve-freelancer'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-freelancer/',
-						'title'            => 'Freelancer',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587634/freelancer/920c5eb680fa5f20b9b19a0d84a385eb',
-					),
-					'neve-shop'               => array(
-						'url'              => 'https://demo.themeisle.com/neve-shop/',
-						'title'            => 'Shop',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587704/shop/56488e52ed6e70495219537f7d3846f2',
-					),
-					'neve-tattoo'             => array(
-						'url'              => 'https://demo.themeisle.com/neve-tatoo/',
-						'title'            => 'Tattoo',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8459353/tatoo-studio',
-					),
-					'neve-zelle'              => array(
-						'url'              => 'https://demo.themeisle.com/neve-zelle/',
-						'title'            => 'Travel Agency',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587771/zelle',
-					),
-					'neve-life-coach'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-scholar/',
-						'title'            => 'Life Coach',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8532052/life-coach',
-					),
-					'neve-creative-portfolio' => array(
-						'url'              => 'https://demo.themeisle.com/neve-creative-portfolio/',
-						'title'            => 'Creative Portfolio',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8334242/creative-portfolio',
-					),
-				),
-			),
-			'remote'      => array(
-
-				'brizy'          => array(
-					'neve-brizy-main'            => array(
-						'url'        => 'https://demo.themeisle.com/neve-onboarding-brizy/',
-						'title'      => 'Original',
-						'local_json' => $onboarding_folder_path . '/neve-brizy-main/data.json',
-						'screenshot' => $onboarding_folder_url . '/neve-main/screenshot.jpg',
-					),
-					'neve-brizy-restaurant'      => array(
-						'url'              => 'https://demo.themeisle.com/neve-restaurant-brizy/',
-						'title'            => 'Restaurant',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587624/restaurant',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-restaurant/data.json',
-						'screenshot'       => $onboarding_folder_url . '/neve-restaurant/screenshot.jpg',
-					),
-					'neve-brizy-charity'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-charity-brizy/',
-						'title'            => 'Charity',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587605/charity',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-charity/data.json',
-						'screenshot'       => $onboarding_folder_url . '/neve-charity/screenshot.jpg',
-					),
-					'neve-brizy-vet-center'      => array(
-						'url'              => 'https://demo.themeisle.com/neve-vet-center-brizy/',
-						'title'            => 'Vet Center',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587611/vet-center',
-						'screenshot'       => $onboarding_folder_url . '/neve-vet-center/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-vet-center/data.json',
-					),
-					'neve-brizy-doctors'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-doctors-brizy/',
-						'title'            => 'Doctors',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587593/doctor',
-						'screenshot'       => $onboarding_folder_url . '/neve-doctors/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-doctors/data.json',
-					),
-					'neve-brizy-architecture'    => array(
-						'url'              => 'https://demo.themeisle.com/neve-architecture-brizy/',
-						'title'            => 'Architecture',
-						'unsplash_gallery' => 'https://unsplash.com/collections/6802313/architecture/f59e19df059789d86d1066ea80130a87',
-						'screenshot'       => $onboarding_folder_url . '/neve-architecture/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-architecture/data.json',
-					),
-					'neve-brizy-fitness'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-fitness-brizy/',
-						'title'            => 'Fitness',
-						'unsplash_gallery' => 'https://unsplash.com/collections/6802313/architecture/f59e19df059789d86d1066ea80130a87',
-						'screenshot'       => $onboarding_folder_url . '/neve-fitness/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-fitness/data.json',
-					),
-					'neve-brizy-vacation-rental' => array(
-						'url'        => 'https://demo.themeisle.com/neve-vacation-rental-brizy/',
-						'title'      => 'Vacation Rental',
-						'screenshot' => $onboarding_folder_url . '/neve-vacation-rental/screenshot.jpg',
-						'local_json' => $onboarding_folder_path . '/neve-brizy-vacation-rental/data.json',
-					),
-					'neve-brizy-music-band'      => array(
-						'url'              => 'https://demo.themeisle.com/neve-music-band-brizy/',
-						'title'            => 'Music Band',
-						'unsplash_gallery' => 'https://unsplash.com/collections/7338489/music/746c95e4a72ad242a07001a2ca0fa7cb',
-						'screenshot'       => $onboarding_folder_url . '/neve-music-band/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-music-band/data.json',
-					),
-					'neve-brizy-shop'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-shop-brizy/',
-						'title'            => 'Shop',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587704/shop/56488e52ed6e70495219537f7d3846f2',
-						'screenshot'       => $onboarding_folder_url . '/neve-shop/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-shop/data.json',
-					),
-					'neve-brizy-zelle'           => array(
-						'url'              => 'https://demo.themeisle.com/neve-zelle-brizy/',
-						'title'            => 'Travel Agency',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587771/zelle',
-						'screenshot'       => $onboarding_folder_url . '/neve-zelle/screenshot.jpg',
-						'local_json'       => $onboarding_folder_path . '/neve-brizy-zelle/data.json',
-					),
-				),
-				'beaver builder' => [
-					'neve-beaver-restaurant'         => array(
-						'url'        => 'https://demo.themeisle.com/neve-bb-restaurant/',
-						'title'      => 'Restaurant',
-						'screenshot' => $onboarding_folder_url . '/neve-restaurant/screenshot.jpg',
-						'local_json' => $onboarding_folder_path . '/neve-beaver-restaurant/data.json',
-					),
-					'neve-beaver-charity'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-charity-bb/',
-						'title'            => 'Charity',
-						'screenshot'       => $onboarding_folder_url . '/neve-charity/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587605/charity',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-charity/data.json',
-					),
-					'neve-beaver-vet-center'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-vet-center-bb/',
-						'title'            => 'Vet Center',
-						'screenshot'       => $onboarding_folder_url . '/neve-vet-center/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587611/vet-center',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-vet-center/data.json',
-					),
-					'neve-beaver-doctors'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-bb-doctors/',
-						'title'            => 'Doctors',
-						'screenshot'       => $onboarding_folder_url . '/neve-doctors/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587593/doctor',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-doctors/data.json',
-					),
-					'neve-beaver-architecture'       => array(
-						'url'              => 'https://demo.themeisle.com/neve-bb-architecture/',
-						'title'            => 'Architecture',
-						'screenshot'       => $onboarding_folder_url . '/neve-architecture/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/6802313/architecture/f59e19df059789d86d1066ea80130a87',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-architecture/data.json',
-					),
-					'neve-beaver-vacation-rental'    => array(
-						'url'        => 'https://demo.themeisle.com/neve-bb-vacantion-rental/',
-						'title'      => 'Vacation Rental',
-						'screenshot' => $onboarding_folder_url . '/neve-vacation-rental/screenshot.jpg',
-						'local_json' => $onboarding_folder_path . '/neve-beaver-vacation-rental/data.json',
-					),
-					'neve-beaver-music-band'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-bb-music-band/',
-						'title'            => 'Music Band',
-						'screenshot'       => $onboarding_folder_url . '/neve-music-band/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/7338489/music/746c95e4a72ad242a07001a2ca0fa7cb',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-music-band/data.json',
-					),
-					'neve-beaver-wedding'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-wedding-bb/',
-						'title'            => 'Wedding',
-						'screenshot'       => $onboarding_folder_url . '/neve-wedding/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8116784/wedding/9afa9f6ba14422f348e1c7a49a9d51e9',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-wedding/data.json',
-					),
-					'neve-beaver-themotion'          => array(
-						'url'              => 'https://demo.themeisle.com/neve-themotion-bb/',
-						'title'            => 'Video Blog',
-						'screenshot'       => $onboarding_folder_url . '/neve-themotion/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8256651/neve-the-motion/79f8c5a63926e7cee4deed75bc6724fc',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-themotion/data.json',
-					),
-					'neve-beaver-amadeus'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-amadeus-bb/',
-						'title'            => 'Music Teacher',
-						'screenshot'       => $onboarding_folder_url . '/neve-amadeus/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8271695/neve-amadeus/ba699571eb4fc205ad8385c0440ced80',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-amadeus/data.json',
-					),
-					'neve-beaver-oblique'            => array(
-						'url'              => 'https://demo.themeisle.com/neve-oblique-bb/',
-						'title'            => 'Vintage',
-						'screenshot'       => $onboarding_folder_url . '/neve-oblique/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8325788/oblique/7281d963f7b798d5fa7d6327bfd26804',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-oblique/data.json',
-					),
-					'neve-beaver-rokophoto'          => array(
-						'url'              => 'https://demo.themeisle.com/neve-rokophoto-bb/',
-						'title'            => 'Photography',
-						'screenshot'       => $onboarding_folder_url . '/neve-rokophoto/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8311183/rokophoto/ecebabcd40134eacf11cbd3cba504f44',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-rokophoto/data.json',
-					),
-					'neve-beaver-shop'               => array(
-						'url'              => 'https://demo.themeisle.com/neve-shop-bb/',
-						'title'            => 'Shop',
-						'screenshot'       => $onboarding_folder_url . '/neve-shop/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587704/shop/56488e52ed6e70495219537f7d3846f2',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-shop/data.json',
-					),
-					'neve-beaver-freelancer'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-bb-freelancer/',
-						'title'            => 'Freelancer',
-						'screenshot'       => $onboarding_folder_url . '/neve-freelancer/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587634/freelancer/920c5eb680fa5f20b9b19a0d84a385eb',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-freelancer/data.json',
-					),
-					'neve-beaver-zelle'              => array(
-						'url'              => 'https://demo.themeisle.com/neve-zelle-bb/',
-						'title'            => 'Travel Agency',
-						'screenshot'       => $onboarding_folder_url . '/neve-zelle/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/4587771/zelle',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-zelle/data.json',
-					),
-					'neve-beaver-life-coach'         => array(
-						'url'              => 'https://demo.themeisle.com/neve-scholar-bb/',
-						'title'            => 'Life Coach',
-						'screenshot'       => $onboarding_folder_url . '/neve-life-coach/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8532052/life-coach',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-life-coach/data.json',
-					),
-					'neve-beaver-creative-portfolio' => array(
-						'url'              => 'https://demo.themeisle.com/neve-creative-portfolio-bb/',
-						'title'            => 'Creative Portfolio',
-						'screenshot'       => $onboarding_folder_url . '/neve-creative-portfolio/screenshot.jpg',
-						'unsplash_gallery' => 'https://unsplash.com/collections/8334242/creative-portfolio',
-						'local_json'       => $onboarding_folder_path . '/neve-beaver-creative-portfolio/data.json',
-					),
-				],
-			),
-			'upsell'      => array(
-				'beaver builder' => array(
-					'neve-beaver-cafe'          => array(
-						'url'        => 'https://demo.themeisle.com/neve-cafe-bb/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-caffe-new-ss.jpg',
-						'title'      => 'Coffee Shop',
-					),
-					'neve-beaver-constructions' => array(
-						'url'        => 'https://demo.themeisle.com/neve-constructions-bb/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-construction-new-screenshot.jpg',
-						'title'      => 'Constructions Company',
-					),
-					'neve-beaver-fashion'       => array(
-						'url'        => 'https://demo.themeisle.com/neve-bb-fashion/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/07/neve-fashion-demo-screenshot.png',
-						'title'      => 'Fashion',
-					),
-					'neve-consultants'          => array(
-						'url'        => 'https://demo.themeisle.com/neve-consultants-bb/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-business-consulting.jpg',
-						'title'      => 'Business Consulting',
-					),
-				),
-				'elementor'      => array(
-					'neve-cafe'                  => array(
-						'url'        => 'https://demo.themeisle.com/neve-cafe/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-caffe-new-ss.jpg',
-						'title'      => 'Coffee Shop',
-					),
-					'neve-constructions'         => array(
-						'url'        => 'https://demo.themeisle.com/neve-constructions/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-construction-new-screenshot.jpg',
-						'title'      => 'Constructions Company',
-					),
-					'neve-fashion'               => array(
-						'url'        => 'https://demo.themeisle.com/neve-fashion/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/07/neve-fashion-demo-screenshot.png',
-						'title'      => 'Fashion',
-					),
-					'neve-showcase'              => array(
-						'url'        => 'https://demo.themeisle.com/neve-showcase/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-showcase-new.jpg',
-						'title'      => 'Showcase',
-					),
-					'neve-consultants'           => array(
-						'url'        => 'https://demo.themeisle.com/neve-consultants/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-business-consulting.jpg',
-						'title'      => 'Business Consulting',
-					),
-					'neve-job-listings'          => array(
-						'url'        => 'https://demo.themeisle.com/neve-job-listings/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-job-listings.jpg',
-						'title'      => 'Job Listing',
-					),
-					'neve-barber-shop'           => array(
-						'url'        => 'https://demo.themeisle.com/neve-barber-shop/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-barber-shop.jpg',
-						'title'      => 'Barber Shop',
-					),
-					'neve-personal-traner'       => array(
-						'url'        => 'https://demo.themeisle.com/neve-personal-trainer/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-personal-trainer.jpg',
-						'title'      => 'Personal Trainer',
-					),
-					'neve-real-estate'           => array(
-						'url'        => 'https://demo.themeisle.com/neve-real-estate/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-real-estate.jpg',
-						'title'      => 'Real Estate',
-					),
-					'neve-events'                => array(
-						'url'        => 'https://demo.themeisle.com/neve-events/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-events.jpg',
-						'title'      => 'Events',
-					),
-					'neve-portrait-photopraphy'  => array(
-						'url'        => 'https://demo.themeisle.com/neve-portrait-photopraphy/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-wedding-photography.jpg',
-						'title'      => 'Wedding Photography',
-					),
-					'neve-photography-portfolio' => array(
-						'url'        => 'https://demo.themeisle.com/neve-photography-portfolio/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-studio-photography.jpg',
-						'title'      => 'Photography Studio',
-					),
-					'neve-video-agency'          => array(
-						'url'        => 'https://demo.themeisle.com/video-agency/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-vide-agency.jpg',
-						'title'      => 'Video Agency',
-					),
-					'neve-furniture-shop'        => array(
-						'url'        => 'https://demo.themeisle.com/neve-furniture-shop/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-furniture-shop.jpg',
-						'title'      => 'Furniture Shop',
-					),
-					'neve-farm'                  => array(
-						'url'        => 'https://demo.themeisle.com/neve-farm/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/09/neve-farm.jpg',
-						'title'      => 'Farm',
-					),
-				),
-				'brizy'          => array(
-					'neve-brizy-cafe'    => array(
-						'url'        => 'https://demo.themeisle.com/neve-cafe-brizy/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-caffe-new-ss.jpg',
-						'title'      => 'Coffee Shop',
-					),
-					'neve-constructions' => array(
-						'url'        => 'https://demo.themeisle.com/neve-constructions-brizy/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/06/neve-construction-new-screenshot.jpg',
-						'title'      => 'Constructions Company',
-					),
-					'neve-fashion'       => array(
-						'url'        => 'https://demo.themeisle.com/neve-fashion-brizy/',
-						'screenshot' => 'https://demo.themeisle.com/hestia-pro-demo-content/wp-content/uploads/sites/105/2019/07/neve-fashion-demo-screenshot.png',
-						'title'      => 'Fashion',
-					),
-				),
-			),
-			'can_migrate' => array(
-				'zerif-pro'  => array(
-					'theme_name'        => 'Zelle Pro',
-					'theme_mod_check'   => 'zelle_frontpage_was_imported',
-					'template'          => 'zelle',
-					'heading'           => __( 'Want to keep using Zelle\'s homepage?', 'neve' ),
-					'description'       => __( 'Hi! We\'ve noticed you were using Zelle before. To make your transition easier, we can help you keep the same beautiful homepage you had before, by converting it into an Elementor template. This option will also import your homepage content.', 'neve' ),
-					'mandatory_plugins' => array(
-						'elementor' => 'Elementor Page Builder',
-					),
-				),
-				'zerif-lite' => array(
-					'theme_name'        => 'Zelle Lite',
-					'theme_mod_check'   => 'zelle_frontpage_was_imported',
-					'template'          => 'zelle',
-					'heading'           => __( 'Want to keep using Zelle\'s homepage?', 'neve' ),
-					'description'       => __( 'Hi! We\'ve noticed you were using Zelle before. To make your transition easier, we can help you keep the same beautiful homepage you had before, by converting it into an Elementor template. This option will also import your homepage content.', 'neve' ),
-					'mandatory_plugins' => array(
-						'elementor' => 'Elementor Page Builder',
-					),
-				),
-			),
-			'i18n'        => array(
-				'templates_title'       => __( 'Ready to use pre-built websites with 1-click installation', 'neve' ),
-				/* translators: %s - theme name */
-				'templates_description' => sprintf( __( 'With %s, you can choose from multiple unique demos, specially designed for you, that can be installed with a single click. You just need to choose your favorite, and we will take care of everything else.', 'neve' ), $theme_name ),
-			),
-			'pro_link'    => 'https://themeisle.com/themes/neve/upgrade/',
-
-		);
-		$this->reorder_starter_sites();
-		$this->add_gutenberg_starter_sites();
-
-		return apply_filters( 'neve_filter_onboarding_data', $this->onboarding_config );
-	}
-
-	/**
-	 * Add gutenberg starter sites if wp_version > 5.0.0
-	 */
-	private function add_gutenberg_starter_sites() {
-		global $wp_version;
-
-		if ( version_compare( $wp_version, '5.0', '>' ) === false ) {
-			return;
-		}
-
-		$this->onboarding_config['editors'][]          = 'gutenberg';
-		$this->onboarding_config['local']['gutenberg'] = array(
-			'neve-main-gutenberg' => array(
-				'url'        => 'https://demo.themeisle.com/neve-onboarding-gutenberg',
-				'title'      => 'Original',
-				'screenshot' => get_template_directory_uri() . '/onboarding/neve-main/screenshot.jpg',
-			),
-		);
-
-	}
-
-	/**
-	 * Gutenberg Block Color Palettes.
-	 *
-	 * Get the color palette in Gutenberg from Customizer colors.
-	 */
-	private function get_gutenberg_color_palette() {
-		$gutenberg_color_palette = array();
-
-		array_push(
-			$gutenberg_color_palette,
-			array(
-				'name'  => __( 'Black', 'neve' ),
-				'slug'  => 'black',
-				'color' => '#000000',
-			)
-		);
-
-		array_push(
-			$gutenberg_color_palette,
-			array(
-				'name'  => __( 'White', 'neve' ),
-				'slug'  => 'white',
-				'color' => '#ffffff',
-			)
-		);
-
-		$color_controls = array(
-			'neve_button_color'     => array(
-				'default' => '#0366d6',
-				'label'   => __( 'Button Color', 'neve' ),
-			),
-			'neve_link_color'       => array(
-				'default' => '#0366d6',
-				'label'   => __( 'Link Color', 'neve' ),
-			),
-			'neve_link_hover_color' => array(
-				'default' => '#0366d6',
-				'label'   => __( 'Link Hover Color', 'neve' ),
-			),
-			'neve_text_color'       => array(
-				'default' => '#404248',
-				'label'   => __( 'Text Color', 'neve' ),
-			),
-		);
-
-		foreach ( $color_controls as $control_name => $control_data ) {
-			$color      = get_theme_mod( $control_name, $control_data['default'] );
-			$color_name = $control_data['label'];
-			$slug       = preg_replace( '~[^\pL\d]+~u', '-', strtolower( $control_name ) );
-			array_push(
-				$gutenberg_color_palette,
-				array(
-					'name'  => esc_html( $color_name ),
-					'slug'  => esc_html( $slug ),
-					'color' => sanitize_hex_color( $color ),
-				)
-			);
-		}
-
-		/**
-		 * Remove duplicate colors.
-		 */
-		$temp_arr = array_unique(
-			array_map(
-				function ( $el ) {
-					return $el['color'];
-				},
-				$gutenberg_color_palette
-			)
-		);
-
-		return array_intersect_key( $gutenberg_color_palette, $temp_arr );
-	}
-
 	/**
 	 * Add new Gutenberg templates on Otter plugin.
+	 *
+	 * @param array $templates_list the templates list array.
 	 *
 	 * @return array
 	 */
@@ -861,61 +423,7 @@ class Front_End {
 			),
 		);
 
-		$list = array_merge( $templates, $templates_list );
-
-		return $list;
-	}
-
-	/**
-	 * Add AMP support
-	 */
-	private function add_amp_support() {
-		if ( ! defined( 'AMP__VERSION' ) ) {
-			return;
-		}
-		if ( version_compare( AMP__VERSION, '1.0.0', '<' ) ) {
-			return;
-		}
-		add_theme_support(
-			'amp',
-			apply_filters(
-				'neve_filter_amp_support',
-				array(
-					'paired' => true,
-				)
-			)
-		);
-	}
-
-	/**
-	 * Add WooCommerce support
-	 */
-	private function add_woo_support() {
-		if ( ! class_exists( 'WooCommerce', false ) ) {
-			return;
-		}
-
-		$woocommerce_settings = apply_filters(
-			'neves_woocommerce_args',
-			array(
-				'single_image_width'            => 600,
-				'thumbnail_image_width'         => 230,
-				'gallery_thumbnail_image_width' => 160,
-				'product_grid'                  => array(
-					'default_columns' => 3,
-					'default_rows'    => 4,
-					'min_columns'     => 1,
-					'max_columns'     => 6,
-					'min_rows'        => 1,
-				),
-			)
-		);
-
-		add_theme_support( 'woocommerce', $woocommerce_settings );
-		add_theme_support( 'wc-product-gallery-zoom' );
-		add_theme_support( 'wc-product-gallery-lightbox' );
-		add_theme_support( 'wc-product-gallery-slider' );
-
+		return array_merge( $templates, $templates_list );
 	}
 
 	/**
@@ -937,7 +445,7 @@ class Front_End {
 			wp_enqueue_style( 'neve-woocommerce' );
 		}
 
-		wp_register_style( 'neve-style', get_template_directory_uri() . '/style' . ( ( NEVE_DEBUG ) ? '' : '.min' ) . '.css', array(), apply_filters( 'neve_version_filter', NEVE_VERSION ) );
+		wp_register_style( 'neve-style', get_template_directory_uri() . '/style-main' . ( ( NEVE_DEBUG ) ? '' : '.min' ) . '.css', array(), apply_filters( 'neve_version_filter', NEVE_VERSION ) );
 		wp_style_add_data( 'neve-style', 'rtl', 'replace' );
 		wp_style_add_data( 'neve-style', 'suffix', '.min' );
 		wp_enqueue_style( 'neve-style' );
@@ -951,22 +459,28 @@ class Front_End {
 			return;
 		}
 
-		wp_register_script( 'neve-script', NEVE_ASSETS_URL . 'js/frontend.js', apply_filters( 'neve_filter_main_script_dependencies', array() ), NEVE_VERSION, true );
+		wp_register_script( 'neve-script', NEVE_ASSETS_URL . 'js/build/modern/frontend.js', apply_filters( 'neve_filter_main_script_dependencies', array() ), NEVE_VERSION, true );
+
 		wp_localize_script(
 			'neve-script',
 			'NeveProperties',
 			apply_filters(
 				'neve_filter_main_script_localization',
 				array(
-					'ajaxurl' => esc_url( admin_url( 'admin-ajax.php' ) ),
-					'nonce'   => wp_create_nonce( 'wp_rest' ),
+					'ajaxurl'     => esc_url( admin_url( 'admin-ajax.php' ) ),
+					'nonce'       => wp_create_nonce( 'wp_rest' ),
+					'isRTL'       => is_rtl(),
+					'isCustomize' => is_customize_preview(),
 				)
 			)
 		);
 		wp_enqueue_script( 'neve-script' );
+		wp_script_add_data( 'neve-script', 'async', true );
+
 		if ( class_exists( 'WooCommerce', false ) && is_woocommerce() ) {
-			wp_register_script( 'neve-shop-script', NEVE_ASSETS_URL . 'js/shop.js', array(), NEVE_VERSION, true );
+			wp_register_script( 'neve-shop-script', NEVE_ASSETS_URL . 'js/build/modern/shop.js', array(), NEVE_VERSION, true );
 			wp_enqueue_script( 'neve-shop-script' );
+			wp_script_add_data( 'neve-shop-script', 'async', true );
 		}
 
 

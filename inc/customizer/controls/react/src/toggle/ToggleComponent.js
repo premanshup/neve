@@ -1,41 +1,37 @@
 /* jshint esversion: 6 */
+import Toggle from './Toggle';
 import PropTypes from 'prop-types';
+import { useState, useEffect } from '@wordpress/element';
 
-const { __ } = wp.i18n;
-const {
-	Component
-} = wp.element;
-const {
-	ToggleControl
-} = wp.components;
+const ToggleComponent = ({ control }) => {
+	const { label, description } = control.params;
+	const [value, setValue] = useState(control.setting.get());
 
-class ToggleComponent extends Component {
-	constructor(props) {
-		super( props );
-		this.state = {
-			value: props.control.setting.get()
-		};
-	}
+	useEffect(() => {
+		global.addEventListener('neve-changed-customizer-value', (e) => {
+			if (!e.detail) return false;
+			if (e.detail.id !== control.id) return false;
+			toggleValue(e.detail.value);
+		});
+	}, []);
 
-	toggleValue(newValue) {
-		this.setState( {
-			value: newValue
-		} );
-		this.props.control.setting.set( newValue );
-	}
+	const toggleValue = (val) => {
+		setValue(val);
+		control.setting.set(val);
+	};
 
-	render() {
-		return (
-				<ToggleControl
-						checked={this.state.value}
-						onChange={(value) => this.toggleValue( value )}
-				/>
-		);
-	}
-}
+	return (
+		<Toggle
+			description={description}
+			label={label}
+			checked={value}
+			onChange={toggleValue}
+		/>
+	);
+};
 
 ToggleComponent.propTypes = {
-	control: PropTypes.object.isRequired
+	control: PropTypes.object.isRequired,
 };
 
 export default ToggleComponent;

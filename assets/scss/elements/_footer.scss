@@ -1,8 +1,13 @@
 footer {
   background-color: #fff;
 }
-
-.nv-footer-content .footer-menu {
-  justify-content: center;
-  @include horizontal-list($spacing-xs, 'true');
-}
+//
+//.footer-menu {
+//  display: flex;
+//  flex-wrap: wrap;
+//  justify-content: center;
+//
+//  li:not(:last-child) {
+//	margin-right: $spacing-sm;
+//  }
+//}

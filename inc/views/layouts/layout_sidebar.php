@@ -91,7 +91,8 @@ class Layout_Sidebar extends Base_View {
 		}
 
 		if ( $advanced_options === false ) {
-			$sidebar_setup['theme_mod'] = 'neve_default_sidebar_layout';
+			$sidebar_setup['theme_mod']   = 'neve_default_sidebar_layout';
+			$sidebar_setup['has_widgets'] = is_active_sidebar( $sidebar_setup['sidebar_slug'] );
 
 			return $sidebar_setup;
 		}
@@ -124,6 +125,8 @@ class Layout_Sidebar extends Base_View {
 				$sidebar_setup['theme_mod'] = 'neve_other_pages_sidebar_layout';
 		}
 
+		$sidebar_setup['has_widgets'] = is_active_sidebar( $sidebar_setup['sidebar_slug'] );
+
 		return $sidebar_setup;
 	}
 
@@ -141,7 +144,7 @@ class Layout_Sidebar extends Base_View {
 		$label        = apply_filters( 'neve_filter_sidebar_close_button_text', __( 'Close', 'neve' ), $slug );
 		$button_attrs = apply_filters( 'neve_filter_sidebar_close_button_data_attrs', '', $slug );
 
-		return '<div class="sidebar-header"><span class="nv-sidebar-toggle in-sidebar button button-secondary" ' . $button_attrs . '>' . esc_html( $label ) . '</span></div>';
+		return '<div class="sidebar-header"><span class="nv-sidebar-toggle in-sidebar button button-secondary secondary-default" ' . $button_attrs . '>' . esc_html( $label ) . '</span></div>';
 	}
 
 	/**

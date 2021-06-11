@@ -1,0 +1,52 @@
+name: PHP Tests
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+env:
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+  CYPRESS_INSTALL_BINARY: 0
+jobs:
+  phplint:
+    name: PHP Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP version
+        uses: shivammathur/setup-php@v1
+        with:
+          php-version: '7.1'
+          extensions: simplexml
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: |
+          echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - name: Setup Composer cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      - name: Install composer
+        run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Run PHPCS
+        run: composer run lint
+
+  themecheck:
+    name: Theme Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: |
+          echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - uses: actions/cache@v1
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: ./bin/envs/init.sh theme-check latest yes
+

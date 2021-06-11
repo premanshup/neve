@@ -10,6 +10,7 @@
 
 namespace Neve\Customizer\Options;
 
+use Neve\Core\Settings\Config;
 use Neve\Customizer\Base_Customizer;
 use Neve\Customizer\Types\Control;
 use Neve\Customizer\Types\Section;
@@ -56,27 +57,21 @@ class Buttons extends Base_Customizer {
 					'tabs'     => array(
 						'button'           => array(
 							'label' => esc_html__( 'Primary', 'neve' ),
-							'icon'  => 'star-filled',
 						),
 						'secondary_button' => array(
 							'label' => esc_html__( 'Secondary', 'neve' ),
-							'icon'  => 'star-empty',
 						),
 					),
 					'controls' => array(
 						'button'           => array(
-							'neve_button_color'            => array(),
-							'neve_button_hover_color'      => array(),
-							'neve_button_text_color'       => array(),
-							'neve_button_hover_text_color' => array(),
-							'neve_button_padding'          => array(),
-							'neve_button_border_radius'    => array(),
+							'neve_button_appearance' => array(),
+							'neve_button_padding'    => array(),
+							'neve_button_typeface'   => array(),
 						),
 						'secondary_button' => array(
-							'neve_secondary_button_color' => array(),
-							'neve_secondary_button_hover_color' => array(),
-							'neve_secondary_button_padding' => array(),
-							'neve_secondary_button_border_radius' => array(),
+							'neve_secondary_button_appearance' => array(),
+							'neve_secondary_button_padding'    => array(),
+							'neve_secondary_button_typeface'   => array(),
 						),
 					),
 				),
@@ -84,99 +79,70 @@ class Buttons extends Base_Customizer {
 			)
 		);
 
-		$buttons = array(
-			'button'           => array(
-				'color'            => array(
-					'label'   => __( 'Background Color', 'neve' ),
-					'default' => '#0366d6',
+		$buttons                = [ 'button', 'secondary_button' ];
+		$live_refresh_selectors = [
+			'button'           => apply_filters( 'neve_selectors_' . Config::CSS_SELECTOR_BTN_PRIMARY_NORMAL, Config::$css_selectors_map[ Config::CSS_SELECTOR_BTN_PRIMARY_NORMAL ] ),
+			'secondary_button' => apply_filters( 'neve_selectors_' . Config::CSS_SELECTOR_BTN_SECONDARY_NORMAL, Config::$css_selectors_map[ Config::CSS_SELECTOR_BTN_SECONDARY_NORMAL ] ),
+		];
+		foreach ( $buttons as $button ) {
+			$defaults = neve_get_button_appearance_default( $button );
+			$this->add_control(
+				new Control(
+					'neve_' . $button . '_appearance',
+					[
+						'sanitize_callback' => 'neve_sanitize_button_appearance',
+						'default'           => $defaults,
+					],
+					[
+						'defaultVals' => $defaults,
+						'label'       => __( 'Button Appearance', 'neve' ),
+						'section'     => $this->section_id,
+						'type'        => 'neve_button_appearance',
+					]
+				)
+			);
+			$default_padding_values = array(
+				'desktop'      => array(
+					'top'    => 8,
+					'right'  => 12,
+					'bottom' => 8,
+					'left'   => 12,
 				),
-				'text_color'       => array(
-					'label'   => __( 'Text Color', 'neve' ),
-					'default' => '#ffffff',
+				'tablet'       => array(
+					'top'    => 8,
+					'right'  => 12,
+					'bottom' => 8,
+					'left'   => 12,
 				),
-				'hover_color'      => array(
-					'label'   => __( 'Hover Background Color', 'neve' ),
-					'default' => '#0366d6',
+				'mobile'       => array(
+					'top'    => 8,
+					'right'  => 12,
+					'bottom' => 8,
+					'left'   => 12,
 				),
-				'hover_text_color' => array(
-					'label'   => __( 'Hover Text Color', 'neve' ),
-					'default' => '#ffffff',
-				),
-			),
-			'secondary_button' => array(
-				'color'       => array(
-					'label'   => __( 'Color', 'neve' ),
-					'default' => '#676767',
-				),
-				'hover_color' => array(
-					'label'   => __( 'Hover Color', 'neve' ),
-					'default' => '#676767',
-				),
-			),
-		);
-
-		foreach ( $buttons as $button => $settings ) {
-
-			foreach ( $settings as $color_type => $args ) {
-				$this->add_control(
-					new Control(
-						'neve_' . $button . '_' . $color_type,
-						array(
-							'sanitize_callback' => 'neve_sanitize_colors',
-							'default'           => $args['default'],
-						),
-						array(
-							'label'   => $args['label'],
-							'section' => $this->section_id,
-						),
-						'WP_Customize_Color_Control'
-					)
-				);
-			}
+				'desktop-unit' => 'px',
+				'tablet-unit'  => 'px',
+				'mobile-unit'  => 'px',
+			);
 
 			$this->add_control(
 				new Control(
 					'neve_' . $button . '_padding',
 					array(
-						'default' => array(
-							'desktop'      => array(
-								'top'    => '',
-								'right'  => '',
-								'bottom' => '',
-								'left'   => '',
-							),
-							'tablet'       => array(
-								'top'    => '',
-								'right'  => '',
-								'bottom' => '',
-								'left'   => '',
-							),
-							'mobile'       => array(
-								'top'    => '',
-								'right'  => '',
-								'bottom' => '',
-								'left'   => '',
-							),
-							'desktop-unit' => 'px',
-							'tablet-unit'  => 'px',
-							'mobile-unit'  => 'px',
-						),
+						'default' => $default_padding_values,
 					),
 					array(
-						'label'          => __( 'Padding', 'neve' ),
-						'section'        => $this->section_id,
-						'linked_choices' => false,
-						'choices'        => array(
-							'top'    => __( 'Top', 'neve' ),
-							'right'  => __( 'Right', 'neve' ),
-							'bottom' => __( 'Bottom', 'neve' ),
-							'left'   => __( 'Left', 'neve' ),
-						),
+						'label'             => __( 'Padding', 'neve' ),
+						'sanitize_callback' => array( $this, 'sanitize_spacing_array' ),
+						'section'           => $this->section_id,
+						'input_attrs'       => [
+							'units' => [ 'px' ],
+						],
+						'default'           => $default_padding_values,
 					),
-					'\HFG\Core\Customizer\SpacingControl'
-				) 
+					'\Neve\Customizer\Controls\React\Spacing'
+				)
 			);
-
 			$this->add_control(
 				new Control(
 					'neve_' . $button . '_border_radius',
@@ -196,6 +162,46 @@ class Buttons extends Base_Customizer {
 						),
 					),
 					'Neve\Customizer\Controls\Range'
+				)
+			);
+
+			$this->add_control(
+				new Control(
+					'neve_' . $button . '_typeface',
+					[
+						'transport' => $this->selective_refresh,
+					],
+					[
+						'label'                 => esc_html__( 'Button Text', 'neve' ),
+						'section'               => $this->section_id,
+						'input_attrs'           => array(
+							'size_units'             => [ 'px' ],
+							'weight_default'         => 400,
+							'size_default'           => array(
+								'suffix'  => array(
+									'mobile'  => 'px',
+									'tablet'  => 'px',
+									'desktop' => 'px',
+								),
+								'mobile'  => 15,
+								'tablet'  => 16,
+								'desktop' => 16,
+							),
+							'line_height_default'    => array(
+								'mobile'  => 1.6,
+								'tablet'  => 1.6,
+								'desktop' => 1.6,
+							),
+							'letter_spacing_default' => array(
+								'mobile'  => 0,
+								'tablet'  => 0,
+								'desktop' => 0,
+							),
+						),
+						'type'                  => 'neve_typeface_control',
+						'live_refresh_selector' => $live_refresh_selectors[ $button ],
+					],
+					'\Neve\Customizer\Controls\React\Typography'
 				)
 			);
 		}

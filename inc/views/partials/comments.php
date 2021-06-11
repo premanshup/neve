@@ -28,10 +28,16 @@ class Comments extends Base_View {
 	 * Render the comments form.
 	 */
 	public function render_comment_form() {
+		$display_form_first = apply_filters( 'neve_show_comment_form_first', false );
+
+		if ( $display_form_first ) {
+			comment_form();
+		}
+
 		if ( have_comments() ) { ?>
 			<div class="nv-comments-title-wrap">
 				<h2 class="comments-title">
-					<?php echo esc_html( $this->get_comments_title() ); ?>
+					<?php echo wp_kses_post( $this->get_comments_title() ); ?>
 				</h2>
 			</div>
 
@@ -57,8 +63,9 @@ class Comments extends Base_View {
 			<p class="no-comments"><?php esc_html_e( 'Comments are closed.', 'neve' ); ?></p>
 			<?php
 		}
-
-		comment_form();
+		if ( ! $display_form_first ) {
+			comment_form();
+		}
 	}
 
 	/**
@@ -112,8 +119,8 @@ class Comments extends Base_View {
 				break;
 			default:
 				?>
-				<li <?php comment_class(); ?> >
-					<article id="comment-item-<?php comment_ID(); ?>" class="nv-comment-article">
+				<li <?php comment_class(); ?> id="comment-item-<?php comment_ID(); ?>">
+				<article id="comment-<?php comment_ID(); ?>" class="nv-comment-article">
 						<div class="nv-comment-header">
 							<div class='nv-comment-avatar'>
 								<?php echo get_avatar( $comment, 50 ); ?>
@@ -198,8 +205,8 @@ class Comments extends Base_View {
 	 * @return array
 	 */
 	public function leave_reply_title_tag( $args ) {
-		$args['title_reply_before'] = '<h2 id="reply-title" class="comment-reply-title">';
-		$args['title_reply_after']  = '</h2>';
+		$args['title_reply_before'] = '<h3 id="reply-title" class="comment-reply-title">';
+		$args['title_reply_after']  = '</h3>';
 
 		return $args;
 	}

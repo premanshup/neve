@@ -1,3 +1,8 @@
+.nav-toggle-label {
+  margin-right: 5px;
+  line-height: 100%;
+}
+
 .icon-bar {
   transition: all .1s ease;
   position: relative;
@@ -8,14 +13,6 @@
 
   &:nth-child(2) {
     margin: 3px 0;
-  }
-
-  .light-mode & {
-    background: #404248;
-  }
-
-  .dark-mode & {
-    background: #fff;
   }
 }
 
@@ -30,15 +27,12 @@
   padding: 10px 15px;
   display: flex;
   align-items: center;
-  border: 1px solid #f0f0f0;
+  border: 1px solid;
+
   &:hover {
     box-shadow: none;
     transform: none;
     background: transparent;
-  }
-
-  .light-mode & {
-    color: #404248;
   }
 }
 

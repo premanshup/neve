@@ -1,108 +1,158 @@
 import PropTypes from 'prop-types';
+import SingleSizingInput from '../common/SingleSizingInput.js';
+import classnames from 'classnames';
+import { useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+import { mapValues } from 'lodash';
+import { Button, Tooltip } from '@wordpress/components';
 
-const { __ } = wp.i18n;
-const {
-	Dropdown,
-	IconButton,
-	RangeControl
-} = wp.components;
-const { Component } = wp.element;
+const SizingControl = ({
+	noLinking,
+	options,
+	defaults,
+	onChange,
+	onReset,
+	max,
+	min,
+	step,
+	value,
+}) => {
+	const shouldValueBeLinked = () => {
+		if (typeof value !== 'object') {
+			return false;
+		}
+		if (noLinking) {
+			return false;
+		}
+		const keys = Object.keys(value);
+		const values = keys.map((k) => value[k]);
+		// eslint-disable-next-line eqeqeq
+		return values.every((v) => v == values[0]);
+	};
 
-class SizingControl extends Component {
-	constructor(props) {
-		super( props );
-	}
+	const [linked, setLinked] = useState(shouldValueBeLinked());
 
-	render() {
+	const toggleLinked = () => {
+		setLinked(!linked);
+	};
+
+	const updateValue = (type, numericValue) => {
+		// If the value is singular, or we have no type for it.
+		if (typeof type === 'undefined' || typeof value !== 'object') {
+			onChange(numericValue);
+			return false;
+		}
+
+		let nextValue = { ...value };
+
+		if (linked) {
+			nextValue = mapValues(nextValue, () => numericValue);
+		} else {
+			nextValue = { ...nextValue, [type]: numericValue };
+		}
+
+		onChange(nextValue);
+	};
+
+	const wrapClasses = classnames([
+		'neve-responsive-sizing',
+		{ 'single-input': options.length === 1 },
+	]);
+
+	const hasSetValues = () => {
+		if (typeof defaults !== 'object') {
+			// eslint-disable-next-line eqeqeq
+			return parseFloat(defaults) != parseFloat(options[0].value);
+		}
 		return (
-				<div className="neve-responsive-sizing">
-					{this.props.options.map( (i, n) => {
-						return (
-								<div className="nv-sizing-item">
-									<Dropdown
-											position="top center"
-											focusOnMount={false}
-											renderToggle={({ isOpen, onToggle }) => (
-													<input
-															type="number"
-															id={i.type + '-input'}
-															value={i.value && i.value}
-															min={this.props.min}
-															max={this.props.max}
-															step={this.props.step}
-															onFocus={onToggle}
-															onChange={
-																e => this.props.onChange( i.type,
-																		e.target.value === '' ? 0 : e.target.value )
-															}
-													/>
-											)}
-											renderContent={({ onToggle }) => (
-													<div className="range-control">
-														<RangeControl
-																value={i.value && i.value}
-																initialPosition={i.value && i.value || 0}
-																beforeIcon="minus"
-																afterIcon="plus"
-																min={this.props.min}
-																max={this.props.max}
-																step={this.props.step}
-																onChange={
-																	e => this.props.onChange( i.type,
-																			e === '' ? 0 : e )
-																}
-														/>
-													</div>
-											)}
-									/>
-									{i.type && (
-											<label className="label" for={i.type + '-input'}>
-												{i.type}
-											</label>
-									)}
-								</div>
-						);
-					} )}
-
-					<div className="nv-sizing-link">
-						<IconButton
-								className={this.props.linked && 'is-linked'}
-								icon={this.props.linked ?
-										'admin-links' :
-										'editor-unlink'}
-								tooltip={this.props.linked ?
-										__( 'Unlink Values', 'neve' ) :
-										__( 'Link Values', 'neve' )}
-								onClick={() => this.props.onLinked()}
-						/>
-					</div>
-					{this.hasSetValues() && <div className="nv-sizing-reset">
-						<IconButton
-								onClick={this.props.onReset}
-								tooltip={__( 'Reset all Values', 'neve' )}
-								icon="image-rotate"
-								className="reset">
-						</IconButton>
-					</div>}
-				</div>
+			options.filter(
+				// eslint-disable-next-line eqeqeq
+				(option) => {
+					return option.value !== defaults[option.type];
+				}
+			).length > 0
 		);
-	}
+	};
 
-	hasSetValues() {
-		let defaults = this.props.defaults;
-		return this.props.options.filter( option => {
-			return option.value !== defaults[option.type];
-		} ).length > 0;
-	}
-}
+	const LinkButton = () => {
+		if (noLinking) {
+			return null;
+		}
+
+		return (
+			<Tooltip
+				key="tooltip-link"
+				text={
+					linked
+						? __('Unlink Values', 'neve')
+						: __('Link Values', 'neve')
+				}
+			>
+				<Button
+					aria-label={__('Link values', 'neve')}
+					key="link-icon"
+					icon={linked ? 'admin-links' : 'editor-unlink'}
+					onClick={toggleLinked}
+					className={classnames([{ active: linked }, 'link'])}
+				/>
+			</Tooltip>
+		);
+	};
+
+	return (
+		<div className={wrapClasses}>
+			<LinkButton />
+			{options.map((i, n) => {
+				return (
+					<SingleSizingInput
+						key={n}
+						onChange={(type, valueSize) =>
+							updateValue(type, valueSize)
+						}
+						value={i.value}
+						className={i.type ? i.type + '-input' : ''}
+						type={i.type}
+						label={i.label || null}
+						max={max}
+						min={min}
+						step={step}
+					/>
+				);
+			})}
+			{hasSetValues() && (
+				<Tooltip
+					key="tooltip-reset"
+					text={
+						options.length > 1
+							? __('Reset all Values', 'neve')
+							: __('Reset Value', 'neve')
+					}
+				>
+					<Button
+						key="reset-icon"
+						icon="image-rotate"
+						className="reset"
+						onClick={onReset}
+					/>
+				</Tooltip>
+			)}
+		</div>
+	);
+};
 
 SizingControl.propTypes = {
 	options: PropTypes.array.isRequired,
-	defaults: PropTypes.array.isRequired,
-	onLinked: PropTypes.func.isRequired,
+	defaults: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.number,
+		PropTypes.object,
+	]),
 	onChange: PropTypes.func.isRequired,
-	linked: PropTypes.bool.isRequired,
-	onReset: PropTypes.func
+	onReset: PropTypes.func,
+	noLinking: PropTypes.bool,
+	min: PropTypes.number,
+	max: PropTypes.number,
+	step: PropTypes.number,
 };
 
 export default SizingControl;

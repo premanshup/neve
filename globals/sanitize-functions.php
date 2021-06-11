@@ -17,6 +17,12 @@
  * @return string
  */
 function neve_sanitize_colors( $value ) {
+	$is_var = ( strpos( $value, 'var' ) !== false );
+
+	if ( $is_var ) {
+		return sanitize_text_field( $value );
+	}
+
 	// Is this an rgba color or a hex?
 	$mode = ( false === strpos( $value, 'rgba' ) ) ? 'hex' : 'rgba';
 
@@ -64,10 +70,10 @@ function neve_sanitize_checkbox( $value ) {
 /**
  * Check if a string is in json format
  *
- * @param  string $string Input.
+ * @param string $string Input.
  *
- * @since 1.1.38
  * @return bool
+ * @since 1.1.38
  */
 function neve_is_json( $string ) {
 	return is_string( $string ) && is_array( json_decode( $string, true ) );
@@ -85,11 +91,10 @@ function neve_sanitize_range_value( $input ) {
 		return floatval( $input );
 	}
 	$range_value            = json_decode( $input, true );
-	$range_value['desktop'] = ! empty( $range_value['desktop'] ) || $range_value['desktop'] === '0' ? floatval( $range_value['desktop'] ) : '';
-	$range_value['tablet']  = ! empty( $range_value['tablet'] ) || $range_value['tablet'] === '0' ? floatval( $range_value['tablet'] ) : '';
-	$range_value['mobile']  = ! empty( $range_value['mobile'] ) || $range_value['mobile'] === '0' ? floatval( $range_value['mobile'] ) : '';
-
-	return json_encode( $range_value );
+	$range_value['desktop'] = is_numeric( $range_value['desktop'] ) ? floatval( $range_value['desktop'] ) : '';
+	$range_value['tablet']  = is_numeric( $range_value['tablet'] ) ? floatval( $range_value['tablet'] ) : '';
+	$range_value['mobile']  = is_numeric( $range_value['mobile'] ) ? floatval( $range_value['mobile'] ) : '';
+	return wp_json_encode( $range_value );
 }
 
 /**
@@ -140,6 +145,63 @@ function neve_sanitize_background( $value ) {
 
 	if ( ! isset( $value['type'] ) || ! in_array( $value['type'], array( 'image', 'color' ), true ) ) {
 		return new WP_Error();
+	}
+
+	return $value;
+}
+
+/**
+ * Sanitize the button appearance control.
+ *
+ * @param array $value the control value.
+ *
+ * @return array
+ */
+function neve_sanitize_button_appearance( $value ) {
+	if ( is_array( $value ) ) {
+		return $value;
+	}
+
+	return $value;
+}
+
+/**
+ * Sanitize the typography control.
+ *
+ * @param array $value the control value.
+ *
+ * @return array
+ */
+function neve_sanitize_typography_control( $value ) {
+	$keys = [
+		'lineHeight',
+		'letterSpacing',
+		'fontWeight',
+		'fontSize',
+		'textTransform',
+	];
+
+	// Approve Keys.
+	foreach ( $value as $key => $values ) {
+		if ( ! in_array( $key, $keys, true ) ) {
+			unset( $value[ $key ] );
+		}
+	}
+
+	// Font Weight.
+	if ( ! in_array( $value['fontWeight'], [ '100', '200', '300', '400', '500', '600', '700', '800', '900' ], true ) ) {
+		$value['fontWeight'] = '300';
+	}
+	// Text Transform.
+	if ( ! in_array( $value['textTransform'], [ 'none', 'uppercase', 'lowercase', 'capitalize' ], true ) ) {
+		$value['textTransform'] = 'none';
+	}
+
+	// Make sure we deal with arrays.
+	foreach ( [ 'letterSpacing', 'lineHeight', 'fontSize' ] as $value_type ) {
+		if ( ! is_array( $value[ $value_type ] ) ) {
+			$value[ $value_type ] = [];
+		}
 	}
 
 	return $value;

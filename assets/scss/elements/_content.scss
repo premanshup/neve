@@ -1,5 +1,24 @@
+.nv-iframe-embed {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  padding-top: 25px;
+  height: 0;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+figcaption {
+	font-size: .8em;
+	opacity: .75;
+}
+
 blockquote {
-  text-align: center;
   margin: $spacing 0;
 
   p {
@@ -12,7 +31,6 @@ blockquote {
     color: $gray-color;
     font-style: normal;
     font-size: .95em;
-    text-align: center;
   }
 
   &:after, &:before {
@@ -44,29 +62,31 @@ table {
     padding: $spacing-xs;
     border-bottom: $muted-border;
   }
-
-  tbody tr:hover {
-    background-color: #fbfbfb;
-  }
 }
 
-p code {
+code {
   background: #d0effb;
   border-radius: 5px;
   border: $muted-border;
   padding: 0 3px;
+  color: #333;
 }
 
 pre {
   display: block;
   padding: $spacing-sm;
-  background: #fbfbfb;
+  background: rgba(255,255,255,0.75);
   border-radius: 5px;
   border: $muted-border;
   margin: $spacing-sm 0;
   white-space: pre-wrap;
-  font-size: 0.9em;
+  font-size: .9em;
   line-height: 2em;
+
+  code {
+	border: 0;
+	background: transparent;
+  }
 }
 
 .nv-content-wrap, .excerpt-wrap {
@@ -88,14 +108,14 @@ pre {
     padding-left: $spacing-sm;
 
     li {
-      margin-bottom: $spacing-xs;
+      margin-top: $spacing-xs;
     }
   }
 
-	dt {
-		font-weight: 600;
-		display: block;
-	}
+  dt {
+    font-weight: 600;
+    display: block;
+  }
 }
 
 .alignleft {
@@ -120,7 +140,7 @@ pre {
 
 .wp-caption-text {
   text-align: center;
-  font-size: 0.8em;
+  font-size: .8em;
   font-weight: 500;
 }
 
@@ -144,8 +164,8 @@ audio {
 }
 
 @mixin content--laptop() {
-  .neve-main > .container .col {
-    max-width: 70%;
+  .neve-main > .container .col{
+	max-width: 70%;
   }
   .neve-main > .container > .row {
     flex-wrap: nowrap;

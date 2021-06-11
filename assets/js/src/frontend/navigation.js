@@ -1,12 +1,13 @@
+/* global NeveProperties */
 /* jshint esversion: 6 */
 import {
 	isMobile,
-	neveEach,
 	isIe,
 	unhashUrl,
 	toggleClass,
 	removeClass,
-	addClass
+	addClass,
+	neveEach,
 } from '../utils.js';
 
 let pageUrl;
@@ -14,140 +15,178 @@ let pageUrl;
 /**
  * Initialize nav logic.
  */
-export const initNavigation = function() {
+export const initNavigation = () => {
 	pageUrl = window.location.href;
 	repositionDropdowns();
 	handleScrollLinks();
 	handleMobileDropdowns();
 	handleSearch();
-	if ( isIe() === true ) {
+	handleMiniCartPosition();
+	if (isIe() === true) {
 		handleIeDropdowns();
 	}
+	window.HFG.initSearch = function () {
+		handleSearch();
+		handleMobileDropdowns();
+	};
 };
 
 /**
  * Reposition drop downs in case they go off screen.
- * @returns {boolean}
  */
-export const repositionDropdowns = function() {
-	if ( isMobile() ) return false;
+export const repositionDropdowns = () => {
+	const { isRTL } = NeveProperties;
+	let left, right;
+	const dropDowns = document.querySelectorAll(
+		'.sub-menu, .minimal .nv-nav-search'
+	);
 
-	let dropDowns = document.querySelectorAll( '.sub-menu .sub-menu' );
-	if ( dropDowns.length === 0 ) return false;
+	if (dropDowns.length === 0) return;
 
-	let windowWidth = window.innerWidth;
-	neveEach( dropDowns, function(dropDown) {
-		let bounding = dropDown.getBoundingClientRect(),
-				rightDist = bounding.left;
-		if ( /webkit.*mobile/i.test( navigator.userAgent ) ) {
-			bounding -= window.scrollX;
+	const windowWidth = window.innerWidth;
+	neveEach(dropDowns, (dropDown) => {
+		const bounding = dropDown.getBoundingClientRect(),
+			rightDist = bounding.left;
+
+		if (rightDist < 0) {
+			left = isRTL ? 'auto' : 0;
+			right = isRTL ? '-100%' : 'auto';
+			dropDown.style.right = right;
+			dropDown.style.left = left;
 		}
 
-		if ( rightDist + bounding.width >= windowWidth ) {
-			dropDown.style.right = '100%';
-			dropDown.style.left = 'auto';
+		if (rightDist + bounding.width >= windowWidth) {
+			right = isRTL ? 0 : '100%';
+			left = 'auto';
+			dropDown.style.right = right;
+			dropDown.style.left = left;
 		}
-	} );
+	});
 };
 
 /**
  * Handle links that link to the current page.
- * @returns {boolean}
  */
 function handleScrollLinks() {
-	let links = document.querySelectorAll( '.nv-nav-wrap a' );
-	if ( links.length === 0 ) return false;
+	const links = document.querySelectorAll('.nv-nav-wrap a');
+	if (links.length === 0) return;
 
-	neveEach( links, function(link) {
-		link.addEventListener( 'click', function(event) {
-			let href = event.target.getAttribute( 'href' );
-			if ( href === null ) return false;
-			if ( unhashUrl( href ) === unhashUrl( pageUrl ) ) {
+	neveEach(links, (link) => {
+		link.addEventListener('click', (event) => {
+			const href = event.target.getAttribute('href');
+			if (href === null) return false;
+			if (unhashUrl(href) === unhashUrl(pageUrl)) {
 				window.HFG.toggleMenuSidebar(false);
 			}
-		} );
-	} );
+		});
+	});
 }
 
 /**
  * Handle dropdowns on mobile devices.
  */
 function handleMobileDropdowns() {
-	let carets = document.querySelectorAll( '.caret-wrap' );
-	neveEach( carets, function(caret) {
-		caret.addEventListener( 'click', function(event) {
-			event.preventDefault();
-			let subMenu = caret.parentNode.parentNode.querySelector( '.sub-menu' );
-			toggleClass( caret, 'dropdown-open' );
-			toggleClass( subMenu, 'dropdown-open' );
-		} );
-	} );
+	const carets = document.querySelectorAll('.caret-wrap');
+	neveEach(carets, (caret) => {
+		caret.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const subMenu = caret.parentNode.parentNode.querySelector(
+				'.sub-menu'
+			);
+			toggleClass(caret, 'dropdown-open');
+			toggleClass(subMenu, 'dropdown-open');
+			createNavOverlay(
+				document.querySelectorAll('.dropdown-open'),
+				'dropdown-open'
+			);
+		});
+	});
 }
 
 /**
  * Handle searches.
  */
 function handleSearch() {
-	let navSearch = document.querySelectorAll( '.nv-nav-search' ),
-			navItem = document.querySelectorAll( '.menu-item-nav-search' ),
-			close = document.querySelectorAll( '.close-responsive-search' ),
-			html = document.querySelector( 'html' );
+	const navSearch = document.querySelectorAll('.nv-nav-search'),
+		navItem = document.querySelectorAll('.menu-item-nav-search'),
+		close = document.querySelectorAll('.close-responsive-search');
 	// Handle search opening.
-	neveEach( navItem, function(searchItem) {
-		searchItem.addEventListener( 'click', function(e) {
-			e.stopPropagation();
-			toggleClass( searchItem, 'active' );
-			searchItem.querySelector( '.search-field' ).focus();
-			if ( !isMobile() ) {
-				createNavOverlay( searchItem, 'active' );
-			}
-		} );
-	} );
-	// Don't close thee search if interacted with.
-	neveEach( navSearch, function(item) {
-		item.addEventListener( 'click', function(e) {
-			e.stopPropagation();
-		} );
-	} );
-	// Mobile search close buttons.
-	neveEach( close, function(button) {
-		button.addEventListener( 'click', function(e) {
+	neveEach(navItem, (searchItem) => {
+		searchItem.addEventListener('click', (e) => {
 			e.preventDefault();
-			neveEach( navItem, function(search) {
-				removeClass( search, 'active' );
-			} );
-			let overlay = document.querySelector( '.nav-clickaway-overlay' );
-			if ( overlay === null )
+			e.stopPropagation();
+			toggleClass(searchItem, 'active');
+			setTimeout(() => {
+				searchItem.querySelector('.search-field').focus();
+			}, 50);
+			if (!isMobile()) {
+				createNavOverlay(searchItem, 'active');
+			}
+		});
+	});
+	// Don't close thee search if interacted with.
+	neveEach(navSearch, (item) => {
+		item.addEventListener('click', (e) => {
+			e.stopPropagation();
+		});
+	});
+	// Mobile search close buttons.
+	neveEach(close, (button) => {
+		button.addEventListener('click', (e) => {
+			e.preventDefault();
+			neveEach(navItem, (search) => {
+				removeClass(search, 'active');
+			});
+			const overlay = document.querySelector('.nav-clickaway-overlay');
+			if (overlay === null) {
 				return;
-			overlay.parentNode.removeChild( overlay );
-		} );
-	} );
+			}
+			overlay.parentNode.removeChild(overlay);
+		});
+	});
 }
+
+/**
+ * Handle the mini cart position in nav.
+ */
+function handleMiniCartPosition() {
+	const item = document.querySelector('.header--row .menu-item-nav-cart');
+	if (item === null) {
+		return;
+	}
+
+	const miniCart = item.querySelector('.nv-nav-cart');
+
+	if (miniCart !== null) {
+		miniCart.style.left =
+			item.getBoundingClientRect().left < 350 ? 0 : null;
+	}
+}
+
+window.addEventListener('resize', handleMiniCartPosition);
 
 /**
  * Create an overlay to allow closing.
  *
- * @param item
- * @param classToRemove
- * @param multiple
- * @returns {boolean}
+ * @param {Object} item
+ * @param {string} classToRemove
  */
-function createNavOverlay(item, classToRemove, multiple = false) {
-
-	let navClickaway = document.querySelector( '.nav-clickaway-overlay' );
-	if ( navClickaway !== null ) {
-		return false;
+function createNavOverlay(item, classToRemove) {
+	let navClickaway = document.querySelector('.nav-clickaway-overlay');
+	if (navClickaway !== null) {
+		navClickaway.parentNode.removeChild(navClickaway);
 	}
-	navClickaway = document.createElement( 'div' );
-	addClass( navClickaway, 'nav-clickaway-overlay' );
+	navClickaway = document.createElement('div');
+	addClass(navClickaway, 'nav-clickaway-overlay');
 
-	let primaryNav = document.querySelector( 'header.header' );
-	primaryNav.parentNode.insertBefore( navClickaway, primaryNav );
+	const primaryNav = document.querySelector('header.header');
+	primaryNav.parentNode.insertBefore(navClickaway, primaryNav);
 
-	navClickaway.addEventListener( 'click', function() {
-		removeClass( item, classToRemove );
-		navClickaway.parentNode.removeChild( navClickaway );
-	} );
+	navClickaway.addEventListener('click', () => {
+		removeClass(item, classToRemove);
+		navClickaway.parentNode.removeChild(navClickaway);
+	});
 }
 
 /**
@@ -155,17 +194,17 @@ function createNavOverlay(item, classToRemove, multiple = false) {
  * have trouble understanding what hover is.
  */
 function handleIeDropdowns() {
-	let dropdowns = document.querySelectorAll(
-			'.header--row[data-show-on="desktop"] .sub-menu' );
-	neveEach( dropdowns, function(dropdown) {
-		let parentItem = dropdown.parentNode;
+	const dropdowns = document.querySelectorAll(
+		'.header--row[data-show-on="desktop"] .sub-menu'
+	);
+	neveEach(dropdowns, (dropdown) => {
+		const parentItem = dropdown.parentNode;
 
-		parentItem.addEventListener( 'mouseenter', function() {
-			addClass( dropdown, 'dropdown-open' );
-		} );
-		parentItem.addEventListener( 'mouseleave', function() {
-			removeClass( dropdown, 'dropdown-open' );
-		} );
-	} );
+		parentItem.addEventListener('mouseenter', () => {
+			addClass(dropdown, 'dropdown-open');
+		});
+		parentItem.addEventListener('mouseleave', () => {
+			removeClass(dropdown, 'dropdown-open');
+		});
+	});
 }
-

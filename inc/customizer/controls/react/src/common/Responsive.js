@@ -1,114 +1,113 @@
+/* global CustomEvent */
+import { Button, Tooltip, ButtonGroup } from '@wordpress/components';
+import { useEffect } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+
 import PropTypes from 'prop-types';
 
-const { __ } = wp.i18n;
-const {
-	Component,
-	Fragment
-} = wp.element;
-const {
-	Button,
-	Dashicon,
-	Dropdown,
-	IconButton
-} = wp.components;
+const ResponsiveControl = ({
+	onChange,
+	excluded,
+	controlLabel,
+	hideResponsive,
+	children,
+}) => {
+	const changeViewType = (device) => {
+		wp.customize.previewedDevice(device);
+	};
 
-class ResponsiveControl extends Component {
-	constructor(props) {
-		super( props );
-		this.state = {
-			view: 'desktop'
-		};
-		this.linkResponsiveButtons();
-	}
+	useEffect(() => {
+		// eslint-disable-next-line @wordpress/no-global-event-listener
+		document.addEventListener('neveChangedRepsonsivePreview', (e) => {
+			onChange(e.detail);
+		});
+	}, []);
 
-	render() {
-		let { view } = this.state;
+	const dispatchViewChange = (device) => {
+		changeViewType(device);
+		const event = new CustomEvent('neveChangedRepsonsivePreview', {
+			detail: device,
+		});
+		document.dispatchEvent(event);
+	};
+
+	const devices = {
+		desktop: {
+			tooltip: __('Desktop', 'neve'),
+			icon: 'desktop',
+		},
+		tablet: {
+			tooltip: __('Tablet', 'neve'),
+			icon: 'tablet',
+		},
+		mobile: {
+			tooltip: __('Mobile', 'neve'),
+			icon: 'smartphone',
+		},
+	};
+
+	const deviceMap = {};
+
+	Object.keys(devices).map((key) => {
+		if (excluded) {
+			if (excluded.includes(key)) {
+				return false;
+			}
+		}
+		deviceMap[key] = devices[key];
+		return key;
+	});
+
+	const renderDeviceButton = (device, index) => {
+		const { tooltip, icon } = deviceMap[device];
+
 		return (
-				<Fragment>
-					<div className="neve-responsive-control-bar">
-						{this.props.controlLabel &&
-						<span
-								className="customize-control-title">{this.props.controlLabel}</span>
-						}
-						{!this.props.hideResponsive && <div className="floating-controls">
-							<Dropdown
-									position="top left"
-									renderToggle={({ isOpen, onToggle }) => (
-											<IconButton
-													icon={'mobile' === view ? 'smartphone' : view}
-													label={__( 'Responsiveness Settings', 'neve' )}
-													className="is-button"
-													onClick={onToggle}
-													aria-expanded={isOpen}
-											/>
-									)}
-									renderContent={({ onToggle }) => (
-											<div className="neve-devices-dropdown">
-												<Button
-														className={{ 'is-selected': 'desktop' === view }}
-														onClick={() => {
-															onToggle();
-															this.changeViewType( 'desktop' );
-														}}
-												>
-													<Dashicon icon="desktop"/>
-													<span className="popover-title">
-											{__( 'Desktop', 'neve' )}
-										</span>
-												</Button>
-
-												<Button
-														className={{ 'is-selected': 'tablet' === view }}
-														onClick={() => {
-															onToggle();
-															this.changeViewType( 'tablet' );
-														}}
-												>
-													<Dashicon icon="tablet"/>
-													<span className="popover-title">
-											{__( 'Tablet Devices', 'neve' )}
-										</span>
-												</Button>
-
-												<Button
-														className={{ 'is-selected': 'mobile' === view }}
-														onClick={() => {
-															onToggle();
-															this.changeViewType( 'mobile' );
-														}}
-												>
-													<Dashicon icon="smartphone"/>
-													<span className="popover-title">
-											{__( 'Smartphones', 'neve' )}
-										</span>
-												</Button>
-											</div>
-									)}
-							/>
-						</div> }
-					</div>
-					{this.props.children}
-				</Fragment>
+			<Tooltip text={tooltip} key={index}>
+				<Button
+					aria-label={tooltip}
+					icon={icon}
+					className={device}
+					onClick={() => {
+						dispatchViewChange(device);
+					}}
+				/>
+			</Tooltip>
 		);
-	}
+	};
 
-	changeViewType(device) {
-		this.setState( { view: device } );
-		wp.customize.previewedDevice( device );
-		this.props.onChange( device );
-	}
-
-	linkResponsiveButtons() {
-		let self = this;
-		document.addEventListener( 'neveChangedRepsonsivePreview', function(e) {
-			self.changeViewType( e.detail );
-		} );
-	}
-}
+	return (
+		<>
+			<div className="neve-responsive-control-bar">
+				{controlLabel && (
+					<span className="customize-control-title">
+						{controlLabel}
+					</span>
+				)}
+				{!hideResponsive && (
+					<div className="floating-controls">
+						<ButtonGroup>
+							{Object.keys(deviceMap).map((device, index) =>
+								renderDeviceButton(device, index)
+							)}
+						</ButtonGroup>
+					</div>
+				)}
+			</div>
+			{children && (
+				<div className="neve-responsive-controls-content">
+					{children}
+				</div>
+			)}
+		</>
+	);
+};
 
 ResponsiveControl.propTypes = {
 	onChange: PropTypes.func,
-	controlLabel: PropTypes.string
+	controlLabel: PropTypes.string,
+	hideResponsive: PropTypes.bool,
+	children: PropTypes.any,
+	excluded: PropTypes.array,
 };
 
 export default ResponsiveControl;

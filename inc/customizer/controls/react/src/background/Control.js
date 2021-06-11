@@ -1,12 +1,9 @@
 /* jshint esversion: 6 */
 import BackgroundComponent from './BackgroundComponent.js';
+import { render } from '@wordpress/element';
 
 export const BackgroundControl = wp.customize.Control.extend({
 	renderContent: function renderContent() {
-		let control = this;
-		ReactDOM.render(
-			<BackgroundComponent control={control} />,
-			control.container[0]
-		);
-	}
+		render(<BackgroundComponent control={this} />, this.container[0]);
+	},
 });

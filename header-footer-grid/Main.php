@@ -12,10 +12,12 @@
 namespace HFG;
 
 use HFG\Core\Builder\Abstract_Builder;
+use HFG\Core\Css_Generator;
 use HFG\Core\Customizer;
 use HFG\Core\Settings\Config;
 use HFG\Core\Settings\Manager;
 use HFG\Traits\Core;
+use PHP_CodeSniffer\Tokenizers\CSS;
 
 /**
  * Class Main
@@ -24,6 +26,7 @@ use HFG\Traits\Core;
  */
 class Main {
 	use Core;
+
 	/**
 	 * Template relative directory.
 	 */
@@ -31,7 +34,7 @@ class Main {
 	/**
 	 * Define version constant used for assets.
 	 */
-	const VERSION = '1.0.3';
+	const VERSION = '2.0.0';
 	/**
 	 * Holds the instance of this class.
 	 *
@@ -68,6 +71,13 @@ class Main {
 	 * @var Customizer $settings
 	 */
 	private $customizer;
+	/**
+	 * Dynamic CSS generator.
+	 *
+	 * @since   2.7.0
+	 * @var Css_Generator Dynamic CSS generator.
+	 */
+	private $css_generator;
 
 	/**
 	 * Main Instance
@@ -87,14 +97,14 @@ class Main {
 			}
 			self::$_instance = new self();
 			self::$_instance->init();
-			self::$_instance->settings   = new Manager();
-			self::$_instance->customizer = new Customizer();
-			$default_directories         = [
-				get_template_directory() . '/' . self::TEMPLATES_DIRECTORY,
-			];
+			self::$_instance->settings      = new Manager();
+			self::$_instance->customizer    = new Customizer();
+			self::$_instance->css_generator = new Css_Generator();
+			$default_directories            = [];
 			if ( is_child_theme() ) {
 				$default_directories[] = get_stylesheet_directory() . '/' . self::TEMPLATES_DIRECTORY;
 			}
+			$default_directories[]    = get_template_directory() . '/' . self::TEMPLATES_DIRECTORY;
 			self::$templates_location = apply_filters( 'hfg_template_locations', $default_directories );
 
 		}
@@ -109,8 +119,7 @@ class Main {
 	 * @access  public
 	 */
 	public function init() {
-		// add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_filter( 'neve_style_output_neve-generated-style', array( $this, 'append_css_style' ) );
+		add_filter( 'neve_style_subscribers', array( $this, 'inline_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_utils_scripts' ) );
 	}
 
@@ -121,7 +130,7 @@ class Main {
 	 * @access  public
 	 */
 	public function admin_utils_scripts() {
-		$layout_data   = Main::get_instance()->get_builder( 'footer' )->get_layout_data();
+		$layout_data   = self::get_instance()->get_builder( 'footer' )->get_layout_data();
 		$footer_top    = ( isset( $layout_data['desktop']['top'] ) ) ? $layout_data['desktop']['top'] : array();
 		$footer_bottom = ( isset( $layout_data['desktop']['bottom'] ) ) ? $layout_data['desktop']['bottom'] : array();
 
@@ -167,6 +176,7 @@ class Main {
 
 		if ( count( self::$templates_location ) === 1 && count( $templates ) === 1 ) {
 			load_template( self::$templates_location[0] . $templates[0], false );
+
 			return;
 		}
 
@@ -187,51 +197,20 @@ class Main {
 		}
 	}
 
-	/**
-	 * Enqueue required files for the module.
-	 *
-	 * @since   1.0.0
-	 * @access  public
-	 */
-	public function enqueue_scripts() {
-		if ( ! $this->should_enqueue_assets() ) {
-			return;
-		}
-
-		// wp_register_style( 'hfg-style', esc_url( Config::get_url() ) . '/assets/css/style.min.css', array(), self::VERSION );
-		// wp_style_add_data( 'hfg-style', 'rtl', 'replace' );
-		// wp_style_add_data( 'hfg-style', 'suffix', '.min' );
-		// wp_enqueue_style( 'hfg-style' );
-		// wp_enqueue_script(
-		// 'hfg-theme-functions',
-		// esc_url( Config::get_url() ) . '/assets/js/theme.min.js',
-		// array(),
-		// self::VERSION,
-		// true
-		// );
-	}
-
-	/**
-	 * Appends css style to neve inline styles.
-	 *
-	 * @param string $style CSS rules.
-	 *
-	 * @return string
-	 * @since   1.0.0
-	 * @access  public
-	 */
-	public function append_css_style( $style ) {
-		return $style . $this->inline_styles();
-	}
 
 	/**
 	 * Generate inline style CSS from array.
 	 *
-	 * @return string
+	 * @param array $subscribers Subscribers list.
+	 *
+	 * @return array
 	 * @since   1.0.0
 	 * @access  public
 	 */
-	public function inline_styles() {
+	public function inline_styles( $subscribers ) {
+		if ( is_customize_preview() ) {
+			return $subscribers;
+		}
 		$css_array = [];
 		/**
 		 * An instance of Abstract_Builder.
@@ -239,11 +218,10 @@ class Main {
 		 * @var Abstract_Builder $builder
 		 */
 		foreach ( $this->get_builders() as $builder ) {
-			$builder_css_array = $builder->add_style( $css_array );
-			$css_array         = $this->array_merge_recursive_distinct( $css_array, $builder_css_array );
+			$css_array = $builder->add_style( $css_array );
 		}
 
-		return $this->css_array_to_css( $css_array );
+		return array_merge( $subscribers, $css_array );
 	}
 
 	/**
