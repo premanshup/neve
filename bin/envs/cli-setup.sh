@@ -38,9 +38,6 @@ wp  --allow-root core install --url=http://localhost:8080 --title=SandboxSite --
 mkdir -p /var/www/html/wp-content/uploads
 rm -rf /var/www/html/wp-content/plugins/akismet
 
-init_environment
-
-
 bash /var/www/html/bin/envs/$WP_ENV/start.sh
 
 wp --allow-root cache flush
