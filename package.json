@@ -83,8 +83,7 @@
 		"pre-commit": "npm-run-all phpcs build size",
 		"cypress:open": "cypress open",
 		"cypress:run": "cd cypress && docker-compose up --exit-code-from cypress",
-		"release": "npx semantic-release",
-		"dist": "bash ./bin/dist.sh"
+		"release": "npx semantic-release"
 	},
 	"size-limit": [
 		{
