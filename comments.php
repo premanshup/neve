@@ -4,14 +4,10 @@
  *
  * @package neve
  */
+
 if ( post_password_required() ) {
 	return;
 }
-
-if ( ! comments_open() ) {
-	return;
-}
-
 ?>
 
 <div id="comments" class="comments-area">

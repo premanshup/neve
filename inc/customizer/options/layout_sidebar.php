@@ -65,7 +65,7 @@ class Layout_Sidebar extends Base_Customizer {
 					'choices'         => $this->sidebar_layout_choices( 'neve_default_sidebar_layout' ),
 					'active_callback' => array( $this, 'sidewide_options_active_callback' ),
 				),
-				'\Neve\Customizer\Controls\React\Radio_Image'
+				'Neve\Customizer\Controls\Radio_Image'
 			)
 		);
 
@@ -118,32 +118,21 @@ class Layout_Sidebar extends Base_Customizer {
 	 * @return array
 	 */
 	private function sidebar_layout_choices( $control_id ) {
-		$options = apply_filters(
+		return apply_filters(
 			'neve_sidebar_layout_choices',
 			array(
 				'full-width' => array(
-					'name' => __( 'Full Width', 'neve' ),
-					'url'  => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAQMAAABknzrDAAAABlBMVEX////V1dXUdjOkAAAAPUlEQVRIx2NgGAUkAcb////Y/+d/+P8AdcQoc8vhH/X/5P+j2kG+GA3CCgrwi43aMWrHqB2jdowEO4YpAACyKSE0IzIuBgAAAABJRU5ErkJggg==',
+					'url' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAQMAAABknzrDAAAABlBMVEX////V1dXUdjOkAAAAPUlEQVRIx2NgGAUkAcb////Y/+d/+P8AdcQoc8vhH/X/5P+j2kG+GA3CCgrwi43aMWrHqB2jdowEO4YpAACyKSE0IzIuBgAAAABJRU5ErkJggg==',
 				),
 				'left'       => array(
-					'name' => __( 'Left', 'neve' ),
-					'url'  => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAgMAAAAjP0ATAAAACVBMVEX///8+yP/V1dXG9YqxAAAAWElEQVR42mNgGAXDE4RCQMDAKONaBQINWqtWrWBatQDIaxg8ygYqQIAOYwC6bwHUmYNH2eBPSMhgBQXKRr0w6oVRL4x6YdQLo14Y9cKoF0a9QCO3jYLhBADvmFlNY69qsQAAAABJRU5ErkJggg==',
+					'url' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAgMAAAAjP0ATAAAACVBMVEX///8+yP/V1dXG9YqxAAAAWElEQVR42mNgGAXDE4RCQMDAKONaBQINWqtWrWBatQDIaxg8ygYqQIAOYwC6bwHUmYNH2eBPSMhgBQXKRr0w6oVRL4x6YdQLo14Y9cKoF0a9QCO3jYLhBADvmFlNY69qsQAAAABJRU5ErkJggg==',
 				),
 				'right'      => array(
-					'name' => __( 'Right', 'neve' ),
-					'url'  => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAgMAAAAjP0ATAAAACVBMVEX///8+yP/V1dXG9YqxAAAAWUlEQVR42mNgGAUjB4iGgkEIzZStAoEVTECiQWsVkLdiECkboAABOmwBF9BtUGcOImUDEiCkJCQU0ECBslEvjHph1AujXhj1wqgXRr0w6oVRLwyEF0bBUAUAz/FTNXm+R/MAAAAASUVORK5CYII=',
+					'url' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAABqAgMAAAAjP0ATAAAACVBMVEX///8+yP/V1dXG9YqxAAAAWUlEQVR42mNgGAUjB4iGgkEIzZStAoEVTECiQWsVkLdiECkboAABOmwBF9BtUGcOImUDEiCkJCQU0ECBslEvjHph1AujXhj1wqgXRr0w6oVRLwyEF0bBUAUAz/FTNXm+R/MAAAAASUVORK5CYII=',
 				),
 			),
 			$control_id
 		);
-
-		foreach ( $options as $slug => $args ) {
-			if ( ! isset( $args['name'] ) ) {
-				$options[ $slug ]['name'] = ucwords( str_replace( '-', ' ', $slug ) );
-			}
-		}
-
-		return $options;
 	}
 
 	/**
@@ -239,7 +228,7 @@ class Layout_Sidebar extends Base_Customizer {
 						'choices'         => $this->sidebar_layout_choices( $control_id ),
 						'active_callback' => array( $this, 'advanced_options_active_callback' ),
 					),
-					'\Neve\Customizer\Controls\React\Radio_Image'
+					'Neve\Customizer\Controls\Radio_Image'
 				)
 			);
 			$priority += 30;
@@ -279,18 +268,18 @@ class Layout_Sidebar extends Base_Customizer {
 		}
 
 		$meta = get_post_meta( $shop_id, 'neve_meta_sidebar', true );
-		if ( empty( $meta ) || $meta === 'default' ) {
+		if ( empty( $meta ) ) {
 			return '';
 		}
 
 		/* translators: %s is Notice text */
-		$template = '<p class="notice notice-info">%s</p>';
+		$template = '<div class="notice notice-info"><p>%s</p></div>';
 
 		return sprintf(
 			$template,
 			sprintf(
 			/* translators: %s is edit page link */
-				esc_html__( 'Note: It seems that the shop page has an individual sidebar layout already set. To be able to control the layout from here, %s your page and set the sidebar to "Inherit".', 'neve' ),
+				esc_html__( 'Note: It seems that the shop page has an individual sidebar layout already set. To be able to control the layout from here, %s your page and set the sidebar to "Customizer Setting".', 'neve' ),
 				sprintf(
 				/* translators: %s is edit label */
 					'<a target="_blank" href="' . get_edit_post_link( $shop_id ) . '">%s</a>',

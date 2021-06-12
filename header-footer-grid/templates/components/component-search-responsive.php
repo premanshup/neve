@@ -14,10 +14,6 @@ use HFG\Core\Components\SearchResponsive;
 $component_styles_array = [];
 $open                   = component_setting( SearchResponsive::OPEN_TYPE );
 
-if ( current_row() === 'sidebar' ) {
-	$open = 'floating';
-}
-
 $component_styles = '';
 if ( ! empty( $component_styles_array ) ) {
 	$component_styles = ' style="';
@@ -28,11 +24,11 @@ if ( ! empty( $component_styles_array ) ) {
 }
 $amp_state = '';
 if ( neve_is_amp() ) {
-	$amp_state = ' on="tap:AMP.setState({visible: !visible})" ';
+	$amp_state = ' on="tap:nv-search-icon-responsive.toggleClass(class=\'active\')" ';
 }
 ?>
 <div class="nv-search-icon-component" <?php echo wp_kses_post( $component_styles ); ?>>
-	<div [class]="visible ? 'menu-item-nav-search active <?php echo esc_attr( $open ); ?>' : 'menu-item-nav-search <?php echo esc_attr( $open ); ?>'" class="menu-item-nav-search <?php echo esc_attr( $open ); ?>" id="nv-search-icon-responsive" tabindex="0">
+	<div class="menu-item-nav-search <?php echo esc_attr( $open ); ?>" id="nv-search-icon-responsive" tabindex="0">
 		<?php neve_search_icon( true, true, 15, ! empty( $amp_state ) ); ?>
 		<div class="nv-nav-search" aria-label="search">
 			<div class="form-wrap <?php echo $open === 'canvas' ? 'container' : ''; ?>">

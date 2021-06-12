@@ -1,9 +1,7 @@
-.nv-nav-wrap ul.primary-menu-ul > {
-  li i {
-	margin-top: 0;
+ul[id^="nv-primary-navigation"] {
+  i {
     font-size: inherit;
     line-height: inherit;
-    width: auto;
-    height: auto;
+    width: 20px;
   }
 }

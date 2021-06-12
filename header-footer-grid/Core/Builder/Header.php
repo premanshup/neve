@@ -47,8 +47,7 @@ class Header extends Abstract_Builder {
 					$this->get_property( 'title' ),
 					/* translators: %s link text */
 					sprintf(
-						'<br/><a target="_blank" rel="external noopener noreferrer" href="https://docs.themeisle.com/article/946-neve-doc#header"><span class="screen-reader-text">%s</span><svg xmlns="http://www.w3.org/2000/svg" focusable="false" role="img" viewBox="0 0 512 512" width="12" height="12" style="margin-right: 5px;"><path fill="currentColor" d="M432 320H400a16 16 0 0 0-16 16V448H64V128H208a16 16 0 0 0 16-16V80a16 16 0 0 0-16-16H48A48 48 0 0 0 0 112V464a48 48 0 0 0 48 48H400a48 48 0 0 0 48-48V336A16 16 0 0 0 432 320ZM488 0h-128c-21.4 0-32 25.9-17 41l35.7 35.7L135 320.4a24 24 0 0 0 0 34L157.7 377a24 24 0 0 0 34 0L435.3 133.3 471 169c15 15 41 4.5 41-17V24A24 24 0 0 0 488 0Z"/></svg>%s</a>',
-						esc_html__( '(opens in a new tab)', 'neve' ),
+						'<br/><a target="_blank" href="https://docs.themeisle.com/article/946-neve-doc#header">%s</a>',
 						esc_html__( 'Read full documentation', 'neve' )
 					)
 				)
@@ -57,7 +56,13 @@ class Header extends Abstract_Builder {
 		$this->set_property(
 			'instructions_array',
 			array(
-				'description' => __( 'Build your own header or choose from preset options.', 'neve' ),
+				'description' => sprintf(
+				/* translators: 1: builder, 2: builder symbol */
+					esc_attr__( 'Welcome to the %1$s builder! Click the %2$s button to add a new component or follow the Quick Links.', 'neve' ),
+					$this->get_property( 'title' ),
+					'+'
+				),
+				'image'       => esc_url( get_template_directory_uri() . '/header-footer-grid/assets/images/customizer/hfg.mp4' ),
 				'quickLinks'  => array(
 					'custom_logo'                       => array(
 						'label' => esc_html__( 'Change Logo', 'neve' ),
@@ -216,21 +221,6 @@ class Header extends Abstract_Builder {
 					'label' => 'Spaced',
 					'image' => NEVE_ASSETS_URL . 'img/header-presets/Spaced.jpg',
 					'setup' => '{"hfg_header_layout": "{\"desktop\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":1,\"height\":1,\"id\":\"header_search_responsive\"},{\"x\":4,\"y\":1,\"width\":4,\"height\":1,\"id\":\"logo\"},{\"x\":11,\"y\":1,\"width\":1,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[]},\"mobile\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"logo\"},{\"x\":8,\"y\":1,\"width\":4,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[],\"sidebar\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"primary-menu\"}]}}","nav-icon_component_align": "right","logo_component_align": "center","header_search_responsive_icon_size":"25"}',
-				],
-				[
-					'label' => 'Collapsed',
-					'image' => NEVE_ASSETS_URL . 'img/header-presets/ClassicCollapsed.jpg',
-					'setup' => '{"hfg_header_layout":"{\"desktop\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":4,\"height\":1,\"id\":\"logo\"},{\"x\":10,\"y\":1,\"width\":1,\"height\":1,\"id\":\"header_search_responsive\"},{\"x\":11,\"y\":1,\"width\":1,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[]},\"mobile\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":6,\"height\":1,\"id\":\"logo\"},{\"x\":8,\"y\":1,\"width\":1,\"height\":1,\"id\":\"header_search_responsive\"},{\"x\":9,\"y\":1,\"width\":3,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[],\"sidebar\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"primary-menu\"}]}}","nav-icon_component_align":"right"}',
-				],
-				[
-					'label' => 'Search Field',
-					'image' => NEVE_ASSETS_URL . 'img/header-presets/SearchField.jpg',
-					'setup' => '{"hfg_header_layout":"{\"desktop\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":3,\"height\":1,\"id\":\"logo\"},{\"x\":3,\"y\":1,\"width\":6,\"height\":1,\"id\":\"primary-menu\"},{\"x\":9,\"y\":1,\"width\":3,\"height\":1,\"id\":\"header_search\"}],\"bottom\":[]},\"mobile\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"logo\"},{\"x\":8,\"y\":1,\"width\":4,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[],\"sidebar\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"primary-menu\"}]}}","primary-menu_component_align":"left"}',
-				],
-				[
-					'label' => 'Button Item',
-					'image' => NEVE_ASSETS_URL . 'img/header-presets/ButtonItem.jpg',
-					'setup' => '{"hfg_header_layout":"{\"desktop\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":4,\"height\":1,\"id\":\"logo\"},{\"x\":4,\"y\":1,\"width\":6,\"height\":1,\"id\":\"primary-menu\"},{\"x\":10,\"y\":1,\"width\":2,\"height\":1,\"id\":\"button_base\"}],\"bottom\":[]},\"mobile\":{\"top\":[],\"main\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"logo\"},{\"x\":8,\"y\":1,\"width\":4,\"height\":1,\"id\":\"nav-icon\"}],\"bottom\":[],\"sidebar\":[{\"x\":0,\"y\":1,\"width\":8,\"height\":1,\"id\":\"primary-menu\"}]}}", "primary-menu_component_align":"right"}',
 				],
 			]
 		);

@@ -1,10 +1,14 @@
 /* jshint esversion: 6 */
+/* global wp */
+import ResponsiveToggleComponent from './ResponsiveToggleComponent.js'
+const { render } = wp.element
 
-import ResponsiveToggleComponent from './ResponsiveToggleComponent.js';
-import { render } from '@wordpress/element';
-
-export const ResponsiveToggleControl = wp.customize.Control.extend({
-	renderContent: function renderContent() {
-		render(<ResponsiveToggleComponent control={this} />, this.container[0]);
-	},
-});
+export const ResponsiveToggleControl = wp.customize.Control.extend( {
+  renderContent: function renderContent() {
+    const control = this
+    render(
+      <ResponsiveToggleComponent control={control} />,
+      control.container[0]
+    )
+  }
+} )

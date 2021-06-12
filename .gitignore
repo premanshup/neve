@@ -4,16 +4,8 @@ logs
 dist
 artifact
 vendor
-visual-regression/*
 **/*.js.map
 **/*.css.map
 **/.DS_Store
-e2e-tests/cypress/videos/*
+cypress/videos/*
 header-footer-grid/assets/css/style*
-storybook-static
-yarn-error.log
-assets/js/build/*
-assets/css/*
-style-main*
-dashboard/build/*
-inc/customizer/controls/react/bundle/*

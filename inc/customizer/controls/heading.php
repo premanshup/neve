@@ -110,12 +110,11 @@ class Heading extends \WP_Customize_Control {
 		<# if(data.category_label) {#>
 		<span class="customize-control-title">{{data.category_label}}</span>
 		<# }#>
-		<div class="neve-customizer-heading">
-			<span class="accordion-heading">{{ data.label }}</span>
+		<h4 class="neve-customizer-heading">{{ data.label }}
 			<# if(data.accordion) { #>
 			<span class="accordion-expand-button"></span>
 			<# } #>
-		</div>
+		</h4>
 		{{{data.style}}} <?php // phpcs:ignore WordPressVIPMinimum.Security.Mustache.OutputNotation ?>
 		<?php
 	}
@@ -135,7 +134,7 @@ class Heading extends \WP_Customize_Control {
 				$style .= ',';
 			}
 		}
-		$style .= '{max-height: 0;opacity: 0;margin: 0; overflow: hidden; padding:0 !important;}';
+		$style .= '{max-height: 0;opacity: 0;margin: 0; overflow: hidden;}';
 		$style .= '</style>';
 
 		return $style;

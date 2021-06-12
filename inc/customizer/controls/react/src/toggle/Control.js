@@ -1,10 +1,14 @@
 /* jshint esversion: 6 */
+/* global wp */
+import ToggleComponent from './ToggleComponent.js'
+const { render } = wp.element
 
-import ToggleComponent from './ToggleComponent.js';
-import { render } from '@wordpress/element';
-
-export const ToggleControl = wp.customize.Control.extend({
-	renderContent: function renderContent() {
-		render(<ToggleComponent control={this} />, this.container[0]);
-	},
-});
+export const ToggleControl = wp.customize.Control.extend( {
+  renderContent: function renderContent() {
+    const control = this
+    render(
+      <ToggleComponent control={control} />,
+      control.container[0]
+    )
+  }
+} )

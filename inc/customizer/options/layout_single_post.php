@@ -83,10 +83,11 @@ class Layout_Single_Post extends Base_Customizer {
 				array(
 					'label'      => esc_html__( 'Elements Order', 'neve' ),
 					'section'    => 'neve_single_post_layout',
+					'type'       => 'ordering',
 					'components' => $components,
 					'priority'   => 10,
 				),
-				'Neve\Customizer\Controls\React\Ordering'
+				'Neve\Customizer\Controls\Ordering'
 			)
 		);
 	}

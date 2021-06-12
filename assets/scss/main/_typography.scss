@@ -8,16 +8,17 @@ html {
 
 body {
   font-family: $default-font-family;
-  color: var(--nv-text-color);
+  color: $body-color;
   line-height: $line-height-base;
   overflow-x: hidden;
   direction: ltr;
-  background-color: var(--nv-site-bg);
+  background-color: #fff;
 }
 
 h1, h2, h3, h4, h5, h6 {
   text-transform: none;
   letter-spacing: 0;
+  font-family: $default-font-family;
   line-height: $line-height-base;
   margin-bottom: $headings-margin-bottom;
   font-weight: $headings-font-weight;
@@ -29,13 +30,17 @@ p {
 
 a {
   cursor: pointer;
-  color: var(--nv-primary-accent);
+  color: $link_color;
   text-decoration: none;
   &:hover,
   &:focus {
     text-decoration: underline;
-    color: var(--nv-secondary-accent);
+    color: $link_hover_color;
   }
+}
+
+.screen-reader-text {
+  display: none;
 }
 
 ins {

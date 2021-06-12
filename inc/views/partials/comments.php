@@ -28,16 +28,10 @@ class Comments extends Base_View {
 	 * Render the comments form.
 	 */
 	public function render_comment_form() {
-		$display_form_first = apply_filters( 'neve_show_comment_form_first', false );
-
-		if ( $display_form_first ) {
-			comment_form();
-		}
-
 		if ( have_comments() ) { ?>
 			<div class="nv-comments-title-wrap">
 				<h2 class="comments-title">
-					<?php echo wp_kses_post( $this->get_comments_title() ); ?>
+					<?php echo esc_html( $this->get_comments_title() ); ?>
 				</h2>
 			</div>
 
@@ -63,9 +57,8 @@ class Comments extends Base_View {
 			<p class="no-comments"><?php esc_html_e( 'Comments are closed.', 'neve' ); ?></p>
 			<?php
 		}
-		if ( ! $display_form_first ) {
-			comment_form();
-		}
+
+		comment_form();
 	}
 
 	/**
