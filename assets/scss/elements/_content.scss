@@ -13,10 +13,6 @@
   }
 }
 
-figcaption {
-	font-size: .8em;
-	opacity: .75;
-}
 
 blockquote {
   margin: $spacing 0;
@@ -64,29 +60,23 @@ table {
   }
 }
 
-code {
+p code {
   background: #d0effb;
   border-radius: 5px;
   border: $muted-border;
   padding: 0 3px;
-  color: #333;
 }
 
 pre {
   display: block;
   padding: $spacing-sm;
-  background: rgba(255,255,255,0.75);
+  background: #fbfbfb;
   border-radius: 5px;
   border: $muted-border;
   margin: $spacing-sm 0;
   white-space: pre-wrap;
-  font-size: .9em;
+  font-size: 0.9em;
   line-height: 2em;
-
-  code {
-	border: 0;
-	background: transparent;
-  }
 }
 
 .nv-content-wrap, .excerpt-wrap {
@@ -140,7 +130,7 @@ pre {
 
 .wp-caption-text {
   text-align: center;
-  font-size: .8em;
+  font-size: 0.8em;
   font-weight: 500;
 }
 
@@ -169,5 +159,9 @@ audio {
   }
   .neve-main > .container > .row {
     flex-wrap: nowrap;
+  }
+
+  .nv-empty-sidebar .neve-main > .container .col {
+    max-width: 100%;
   }
 }

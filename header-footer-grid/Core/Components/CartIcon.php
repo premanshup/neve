@@ -122,10 +122,9 @@ class CartIcon extends Abstract_Component {
 						'defaultVal' => 15,
 					],
 				],
-				'live_refresh_selector' => $this->default_selector . ' span.nv-icon.nv-cart svg',
+				'live_refresh_selector' => $this->default_selector . ' svg',
 				'live_refresh_css_prop' => array(
-					'type'    => 'svg-icon-size',
-					'default' => 15,
+					'type' => 'svg-icon-size',
 				),
 				'section'               => $this->section,
 				'conditional_header'    => true,
@@ -138,7 +137,7 @@ class CartIcon extends Abstract_Component {
 				'group'                 => self::COMPONENT_ID,
 				'tab'                   => SettingsManager::TAB_STYLE,
 				'transport'             => 'postMessage',
-				'sanitize_callback'     => 'neve_sanitize_colors',
+				'sanitize_callback'     => 'sanitize_hex_color',
 				'label'                 => __( 'Color', 'neve' ),
 				'type'                  => 'neve_color_control',
 				'section'               => $this->section,
@@ -164,7 +163,7 @@ class CartIcon extends Abstract_Component {
 				'group'                 => self::COMPONENT_ID,
 				'tab'                   => SettingsManager::TAB_STYLE,
 				'transport'             => 'postMessage',
-				'sanitize_callback'     => 'neve_sanitize_colors',
+				'sanitize_callback'     => 'sanitize_hex_color',
 				'label'                 => __( 'Hover Color', 'neve' ),
 				'type'                  => 'neve_color_control',
 				'section'               => $this->section,
@@ -196,7 +195,7 @@ class CartIcon extends Abstract_Component {
 	 */
 	public function add_style( array $css_array = array() ) {
 		$css_array[] = [
-			Dynamic_Selector::KEY_SELECTOR => $this->default_selector . ' span.nv-icon.nv-cart svg',
+			Dynamic_Selector::KEY_SELECTOR => $this->default_selector . ' svg',
 			Dynamic_Selector::KEY_RULES    => [
 				\Neve\Core\Settings\Config::CSS_PROP_WIDTH => [
 					Dynamic_Selector::META_KEY     => $this->get_id() . '_' . self::SIZE_ID,
@@ -224,7 +223,7 @@ class CartIcon extends Abstract_Component {
 		];
 
 		$css_array[] = [
-			Dynamic_Selector::KEY_SELECTOR => $this->default_selector . ':hover span.nv-icon.nv-cart svg',
+			Dynamic_Selector::KEY_SELECTOR => $this->default_selector . ':hover svg',
 			Dynamic_Selector::KEY_RULES    => [
 				\Neve\Core\Settings\Config::CSS_PROP_FILL_COLOR => [
 					Dynamic_Selector::META_KEY     => $this->get_id() . '_' . self::HOVER_COLOR_ID,
@@ -273,13 +272,16 @@ class CartIcon extends Abstract_Component {
 	 *
 	 * @return bool
 	 */
-	public static function should_load_pro_features() {
+	static function should_load_pro_features() {
 		if ( ! class_exists( '\Neve_Pro\Modules\Woocommerce_Booster\Customizer\Cart_Icon' ) ) {
 			return false;
 		}
 
-		if ( ! apply_filters( 'nv_pro_woocommerce_booster_status', false ) || ! class_exists( 'WooCommerce' ) ) {
-			return false;
+		if ( class_exists( '\Neve_Pro\Core\Settings' ) ) {
+			$settings = new Settings();
+			if ( ! $settings->is_module_active( 'woocommerce_booster' ) || ! class_exists( 'WooCommerce' ) ) {
+				return false;
+			}
 		}
 
 		return true;

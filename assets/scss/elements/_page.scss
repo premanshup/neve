@@ -2,9 +2,6 @@
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  position: relative;
-  transition: all .3s cubic-bezier(.79, .14, .15, .86);
-  width: 100%;
 }
 
 body > .wrapper:not(.et-fb-iframe-ancestor) {

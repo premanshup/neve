@@ -1,25 +1,18 @@
-import { changeOption as changeSetting } from '../../utils/rest';
+import {changeOption as changeSetting} from '../../utils/rest';
 
-import { useState } from '@wordpress/element';
-import { Button } from '@wordpress/components';
-import { withSelect, withDispatch } from '@wordpress/data';
-import { compose } from '@wordpress/compose';
-import { __ } from '@wordpress/i18n';
+const {useState} = wp.element;
+const {Button, Dashicon} = wp.components;
+const {withSelect, withDispatch} = wp.data;
+const {compose} = wp.compose;
+const {__} = wp.i18n;
 
-const InputForm = ({
-	slug,
-	label,
-	placeholder,
-	getOption,
-	setToast,
-	changeOption,
-}) => {
-	const [value, setValue] = useState(getOption(slug));
-	const [loading, setLoading] = useState(false);
+const InputForm = ({slug, label, placeholder, getOption, setToast, changeOption}) => {
+	const [ value, setValue ] = useState(getOption(slug));
+	const [ loading, setLoading ] = useState(false);
 	return (
-		<div className="module-option text">
-			<form
-				onSubmit={(e) => {
+		<div className='module-option text'>
+			<form onSubmit={
+				(e) => {
 					e.preventDefault();
 					setLoading(true);
 					changeSetting(slug, value).then((r) => {
@@ -32,17 +25,19 @@ const InputForm = ({
 						setToast(r.message ? r.message : false);
 						setLoading(false);
 					});
-				}}
-			>
+				}
+			}>
 				{label && <label htmlFor={slug}>{label}</label>}
 				<div className="input-wrap">
 					<input
 						id={slug}
 						placeholder={placeholder}
 						value={value}
-						onChange={(e) => {
-							setValue(e.target.value);
-						}}
+						onChange={
+							(e) => {
+								setValue(e.target.value);
+							}
+						}
 					/>
 					<div className="actions">
 						<Button
@@ -59,18 +54,22 @@ const InputForm = ({
 	);
 };
 
+
 export default compose(
 	withSelect((select) => {
-		const { getProOption } = select('neve-dashboard');
+		const {
+			getProOption
+		} = select('neve-dashboard');
 		return {
-			getOption: (slug) => getProOption(slug),
+			getOption: (slug) => getProOption(slug)
 		};
 	}),
 	withDispatch((dispatch) => {
-		const { changeModuleOption, setToast } = dispatch('neve-dashboard');
+		const {changeModuleOption, setToast} = dispatch('neve-dashboard');
 		return {
 			changeOption: (slug, value) => changeModuleOption(slug, value),
-			setToast: (message) => setToast(message),
+			setToast: (message) => setToast(message)
 		};
 	})
 )(InputForm);
+

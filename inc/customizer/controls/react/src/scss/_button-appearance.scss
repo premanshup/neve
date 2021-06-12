@@ -15,7 +15,7 @@
   }
 
   .components-panel {
-    margin: 0 -16px -1px;
+    margin: 0 -11px -1px;
   }
 
   .components-panel__row {
@@ -24,12 +24,12 @@
   }
 
   .neve-radio-icons {
-	padding: 0;
     button {
       height: 30px;
 
       &.is-text {
         font-weight: 700;
+        border-radius: 4px;
         color: $accent-color;
       }
 

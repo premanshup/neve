@@ -1,133 +1,164 @@
 /* jshint esversion: 6 */
+/* global wp, mapValues */
 
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
-import ResponsiveControl from '../common/Responsive';
-import { maybeParseJson, getIntValAsResponsive } from '../common/common';
+import PropTypes from 'prop-types'
+import ResponsiveControl from '../common/Responsive'
+import { maybeParseJson } from '../common/common'
+import classnames from 'classnames'
 
-import { RangeControl, Button } from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
-import { mapValues } from 'lodash';
+const { __ } = wp.i18n
+const { RangeControl, Button, Tooltip, IconButton } = wp.components
+const { Component } = wp.element
 
-const ResponsiveRangeComponent = ({ control }) => {
-	const parsedValue = maybeParseJson(control.setting.get());
-	const [currentDevice, setCurrentDevice] = useState('desktop');
-	const [value, setValue] = useState(parsedValue);
+class ResponsiveRangeComponent extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      value: maybeParseJson(props.control.setting.get()),
+      currentDevice: 'desktop'
+    }
 
-	useEffect(() => {
-		// If a value is int, make it responsive.
-		const responsiveConverted = getIntValAsResponsive(
-			control.setting.get()
-		);
-		if (value !== responsiveConverted) {
-			setValue(responsiveConverted);
-		}
-		global.addEventListener('neve-changed-customizer-value', (e) => {
-			if (!e.detail) return false;
-			if (e.detail.id !== control.id) return false;
-			// Make sure we translate int values to responsive values.
-			const incomingValue = getIntValAsResponsive(e.detail.value);
+    this.updateValues = this.updateValues.bind(this)
+    this.renderControlHeader = this.renderControlHeader.bind(this)
+    this.getButtons = this.getButtons.bind(this)
+    this.renderReset = this.renderReset.bind(this)
+  }
 
-			setValue(maybeParseJson(incomingValue));
-			control.setting.set(JSON.stringify(incomingValue));
-		});
-	}, []);
+  getButtons() {
+    const { units } = this.props.control.params.input_attrs
+    if (!units) {
+      return null
+    }
 
-	const { label } = control.params;
-	const {
-		hideResponsive,
-		units,
-		defaultVal,
-		step,
-		min,
-		max,
-	} = control.params.input_attrs;
+    if (units.length === 1) {
+      return <Button isSmall disabled className='active alone'>{units[0]}</Button>
+    }
 
-	const unitButtons = () => {
-		if (!units) {
-			return null;
-		}
+    return units.map((unit, index) => {
+      const buttonClass = classnames(
+        {
+          active: self.state.value[self.state.currentDevice +
+          '-unit'] === unit
+        }
+      )
+      return (
+        <Button
+          key={index}
+          isSmall
+          className={buttonClass}
+          onClick={() => {
+            const value = { ...self.state.value }
+            value[self.state.currentDevice + '-unit'] = unit
+            if (unit !== 'em') {
+              value[self.state.currentDevice] = mapValues(
+                value[self.state.currentDevice],
+                (value) => value ? parseInt(value) : value)
+            }
+            self.setState({ value })
+            self.props.control.setting.set(value)
+          }}
+        >
+          {unit}
+        </Button>
+      )
+    })
+  }
 
-		if (units.length === 1) {
-			return (
-				<Button isSmall disabled className="active alone">
-					{units[0]}
-				</Button>
-			);
-		}
+  renderControlHeader() {
+    const { label } = this.props.control.params
+    const { hideResponsive } = this.props.control.params.input_attrs
+    return (
+      <div className='neve-control-header'>
+        {label && <span className='customize-control-title'>{label}</span>}
+        <ResponsiveControl
+          onChange={(currentDevice) => this.setState({ currentDevice })}
+          hideResponsive={hideResponsive || false}
+        />
+        <div className='neve-units'>
+          {this.getButtons()}
+        </div>
+      </div>
+    )
+  }
 
-		return units.map((unit, index) => {
-			const buttonClass = classnames({
-				active: value[currentDevice + '-unit'] === unit,
-			});
-			return (
-				<Button
-					key={index}
-					isSmall
-					className={buttonClass}
-					onClick={() => {
-						const nextValue = { ...value };
-						nextValue[currentDevice + '-unit'] = unit;
-						if (unit !== 'em') {
-							nextValue[currentDevice] = mapValues(
-								nextValue[currentDevice],
-								(valueToSet) =>
-									valueToSet
-										? parseInt(valueToSet)
-										: valueToSet
-							);
-						}
-						setValue(nextValue);
-						control.setting.set(nextValue);
-					}}
-				>
-					{unit}
-				</Button>
-			);
-		});
-	};
+  render() {
+    const { currentDevice, value } = this.state
+    const { step, min, max } = this.props.control.params.input_attrs
+    return (
+      <div className='neve-white-background-control neve-range-control'>
+        {this.renderControlHeader()}
+        <div className='range-wrap'>
+          <RangeControl
+            value={parseInt(value[currentDevice])}
+            initialPosition={0}
+            onChange={(value) => {
+              this.updateValues(value)
+            }}
+            min={min || 0}
+            step={step || 1}
+            max={max || 100}
+          />
+          {this.renderReset()}
+        </div>
+      </div>
+    )
+  }
 
-	const updateValues = (newValue) => {
-		const nextValue = { ...value };
-		nextValue[currentDevice] = newValue;
-		setValue(nextValue);
-		control.setting.set(JSON.stringify(nextValue));
-	};
+  renderReset() {
+    const { defaultVal } = this.props.control.params.input_attrs
+    const { currentDevice, value } = this.state
+    if (!defaultVal) {
+      return null
+    }
 
-	let displayValue = parseInt(value[currentDevice]);
-	displayValue = displayValue === 0 ? 0 : displayValue || '';
+    if (defaultVal[currentDevice] === value[currentDevice]) {
+      return null
+    }
 
-	return (
-		<div className="neve-white-background-control neve-range-control">
-			<div className="neve-control-header">
-				{label && (
-					<span className="customize-control-title">{label}</span>
-				)}
-				<ResponsiveControl
-					onChange={(device) => setCurrentDevice(device)}
-					hideResponsive={hideResponsive || false}
-				/>
-				<div className="neve-units">{unitButtons()}</div>
-			</div>
-			<div className="range-wrap">
-				<RangeControl
-					resetFallbackValue={defaultVal[currentDevice]}
-					value={displayValue}
-					min={min < 0 ? min : 0}
-					max={max || 100}
-					step={step || 1}
-					allowReset
-					onChange={(nextValue) => {
-						updateValues(nextValue);
-					}}
-				/>
-			</div>
-		</div>
-	);
-};
+    return (
+      <Tooltip
+        key='tooltip-reset'
+        text={__('Reset Value', 'neve')}
+      >
+        <IconButton
+          key='reset-icon'
+          icon='image-rotate'
+          className='reset'
+          onClick={() => this.updateValues(defaultVal[currentDevice])}
+        />
+      </Tooltip>
+    )
+  }
+
+  updateValues(value) {
+    const { currentDevice } = this.state
+    this.setState({
+      value: {
+        ...this.state.value,
+        [currentDevice]: value
+      }
+    })
+    this.props.control.setting.set(JSON.stringify({
+      ...maybeParseJson(this.props.control.setting.get()),
+      [currentDevice]: value
+    }))
+  }
+
+  componentDidMount() {
+    const { control } = this.props
+
+    document.addEventListener('neve-changed-customizer-value', (e) => {
+      if (!e.detail) return false
+      if (e.detail.id !== control.id) return false
+
+      this.setState({ value: maybeParseJson(e.detail.value) })
+      this.props.control.setting.set(JSON.stringify(e.detail.value))
+    })
+  }
+}
 
 ResponsiveRangeComponent.propTypes = {
-	control: PropTypes.object.isRequired,
-};
+  control: PropTypes.object.isRequired
+}
 
-export default ResponsiveRangeComponent;
+export default ResponsiveRangeComponent

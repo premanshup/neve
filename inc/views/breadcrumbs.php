@@ -108,25 +108,12 @@ class Breadcrumbs extends Base_View {
 
 		// SEOPress breadcrumbs
 		if ( function_exists( 'seopress_display_breadcrumbs' ) ) {
-			echo '<' . esc_html( $html_tag ) . ' class="neve-breadcrumbs-wrapper">';
-			seopress_display_breadcrumbs();
-			echo '</' . esc_html( $html_tag ) . '>';
-
-			return true;
+			return '<small class="neve-breadcrumbs-wrapper">' . seopress_display_breadcrumbs() . '</small>';
 		}
 
 		// Rank Math breadcrumbs
 		if ( function_exists( 'rank_math_the_breadcrumbs' ) ) {
-			echo '<' . esc_html( $html_tag ) . ' class="neve-breadcrumbs-wrapper">';
-			rank_math_the_breadcrumbs(
-				[
-					'wrap_before' => '<nav aria-label="breadcrumbs" class="rank-math-breadcrumb">',
-					'wrap_after'  => '</nav>',
-				]
-			);
-			echo '</' . esc_html( $html_tag ) . '>';
-
-			return true;
+			return '<small class="neve-breadcrumbs-wrapper">' . rank_math_the_breadcrumbs() . '</small>';
 		}
 
 		if ( function_exists( 'bcn_display' ) ) {

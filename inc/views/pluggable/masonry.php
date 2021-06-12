@@ -39,12 +39,7 @@ class Masonry extends Base_View {
 		if ( ! $this->is_masonry_enabled() ) {
 			return $data;
 		}
-		$layout  = get_theme_mod( 'neve_blog_archive_layout', 'grid' );
-		$columns = $this->get_max_columns();
-
-		$data['masonryStatus']  = 'enabled';
-		$data['masonryColumns'] = absint( $columns );
-		$data['blogLayout']     = esc_html( $layout );
+		$data['masonry'] = 'enabled';
 		return $data;
 	}
 
@@ -71,33 +66,12 @@ class Masonry extends Base_View {
 	 */
 	public function is_masonry_enabled() {
 		$blog_layout = get_theme_mod( 'neve_blog_archive_layout', 'grid' );
-		$columns     = $this->get_max_columns();
+		$columns     = get_theme_mod( 'neve_grid_layout', '1' );
 
-		if ( ! in_array( $blog_layout, [ 'grid', 'covers' ], true ) || $columns === 1 ) {
+		if ( $blog_layout !== 'grid' || $columns === 1 ) {
 			return false;
 		}
 
 		return get_theme_mod( 'neve_enable_masonry', false );
-	}
-
-	/**
-	 * Get the maximum number of columns.
-	 *
-	 * @return int
-	 */
-	private function get_max_columns() {
-		$columns = get_theme_mod( 'neve_grid_layout', '{mobile:1, tablet:1, desktop:1}' );
-		if ( is_int( $columns ) ) {
-			return $columns;
-		}
-		if ( empty( $columns ) ) {
-			return 1;
-		}
-
-		$columns = json_decode( $columns, true );
-		if ( ! is_array( $columns ) ) {
-			return 1;
-		}
-		return max( $columns );
 	}
 }

@@ -4,7 +4,7 @@
   margin-left: 14px;
 
   .customize-control-title {
-	margin: 0;
+	margin: 0 0 10px;
   }
 
   .components-button-group {
@@ -16,27 +16,15 @@
 	height: auto;
 	box-shadow: none !important;
 	padding: 3px 4px !important;
-	min-width: unset !important;
 
-	svg, .dashicon {
-	  fill: $icon-fill;
+	svg {
+	  fill: $icon-fill !important;
 	  height: 15px;
 	  width: 16px;
-	  font-size: 15px;
 	}
-  }
-}
 
-$devicemap : 'tablet', 'mobile', 'desktop';
-
-@each $device in $devicemap {
-  .preview-#{$device} {
-	.neve-responsive-control-bar {
-	  button.#{$device} {
-		.dashicon {
-		  color: lighten($accent-color, 20);
-		}
-	  }
+	&.active-device svg {
+	  fill: $accent-color !important;
 	}
   }
 }

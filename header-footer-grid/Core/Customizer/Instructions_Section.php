@@ -42,6 +42,16 @@ class Instructions_Section extends \WP_Customize_Section {
 	 */
 	public $options = [];
 
+	/**
+	 * Constructor.
+	 *
+	 * @param \WP_Customize_Manager $manager Customizer bootstrap instance.
+	 * @param string                $id      ID of the section.
+	 * @param array                 $args    Arguments.
+	 */
+	public function __construct( $manager, $id, $args = array() ) {
+		parent::__construct( $manager, $id, $args );
+	}
 
 	/**
 	 * Gather the parameters passed to client JavaScript via JSON.
@@ -66,7 +76,7 @@ class Instructions_Section extends \WP_Customize_Section {
 		<li id="accordion-section-{{ data.id }}"
 				class="hfg-instructions-section control-section control-section-{{ data.type }}">
 
-			<# if( data.options.description ) { #>
+			<# if( data.options.image ) { #>
 			<p>{{data.options.description}}</p>
 			<# } #>
 			<hr>

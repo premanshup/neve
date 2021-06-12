@@ -22,21 +22,14 @@ class Color extends \WP_Customize_Control {
 	/**
 	 * Additional arguments passed to JS.
 	 *
-	 * @var string
+	 * @var array
 	 */
-	public $default = '';
-	/**
-	 * Disable Alpha in colorpicker.
-	 *
-	 * @var bool
-	 */
-	public $disable_alpha = false;
+	public $default = [];
 	/**
 	 * Send to JS.
 	 */
 	public function to_json() {
 		parent::to_json();
-		$this->json['default']      = $this->default;
-		$this->json['disableAlpha'] = $this->disable_alpha;
+		$this->json['default'] = $this->default;
 	}
 }

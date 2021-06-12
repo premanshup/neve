@@ -1,60 +1,116 @@
 /* jshint esversion: 6 */
-import PropTypes from 'prop-types';
+/* global wp */
+import PropTypes from 'prop-types'
+import { maybeParseJson } from '../common/common'
 
-import { useState } from '@wordpress/element';
-import { Tooltip } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+const { Component } = wp.element
+const { Tooltip } = wp.components
+const { __ } = wp.i18n
 
-const PresetsSelector = ({ presets, onSelect }) => {
-	const [search, setSearch] = useState('');
+class PresetsSelector extends Component {
+  constructor(props) {
+    super( props )
 
-	/**
-	 * You can get the value in the console with this command:
-	 *
-	 * copy(HFG.getSettings());
-	 *
-	 * @return {*}
-	 */
-	const filteredPresets = presets.filter((preset) =>
-		preset.label.toLowerCase().includes(search.toLowerCase())
-	);
+    this.state = {
+      search: ''
+    }
 
-	return (
-		<div className="neve-preset-selector">
-			<div className="search">
-				<input
-					type="search"
-					placeholder={__('Search Header Presets…', 'neve')}
-					onChange={(e) => {
-						setSearch(e.target.value);
-					}}
-				/>
-			</div>
-			{filteredPresets.length > 0 ? (
-				filteredPresets.map((preset, index) => {
-					return (
-						<Tooltip key={index} text={preset.label}>
-							<button
-								onClick={(e) => {
-									e.preventDefault();
-									onSelect(preset.setup);
-								}}
-							>
-								<img src={preset.image} alt={preset.label} />
-							</button>
-						</Tooltip>
-					);
-				})
-			) : (
-				<p>{__('No header presets found', 'neve')}</p>
-			)}
-		</div>
-	);
-};
+    this.replaceSettings = this.replaceSettings.bind( this )
+  }
+
+  /**
+   * You can get the value in the console with this command:
+   *
+   * copy(HFG.getSettings());
+   *
+   * @returns {*}
+   */
+  getPresets() {
+    const { presets } = this.props.control.params
+
+    return presets.filter( (preset) => {
+      return preset.label.toLowerCase()
+        .includes( this.state.search.toLowerCase() )
+    } )
+  }
+
+  render() {
+    const presets = this.getPresets()
+    return (
+      <div className='neve-preset-selector'>
+        <div className='search'>
+          <input
+            type='search'
+            placeholder={__( 'Search Header Presets...' )}
+            onChange={(e) => { this.setState( { search: e.target.value } ) }}
+          />
+        </div>
+        {
+          presets.length > 0 ? presets.map( (preset, index) => {
+            return (
+              <Tooltip key={index} text={preset.label}>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    this.replaceSettings( preset.setup )
+                  }}
+                >
+                  <img src={preset.image} alt={preset.label} />
+                </button>
+              </Tooltip>
+            )
+          } )
+            : <p>{__( 'No header presets found', 'neve' )}</p>
+        }
+      </div>
+    )
+  }
+
+  replaceSettings(setup) {
+    setup = maybeParseJson( setup )
+    if ( typeof NeveProReactCustomize === 'undefined' ) {
+      Object.keys( setup ).map( (themeMod) => {
+        if ( themeMod === 'hfg_header_layout' ) {
+          wp.customize.control( themeMod )
+            .setting
+            .set( setup[themeMod] )
+          document.dispatchEvent(
+            new CustomEvent( 'neve-changed-builder-value', {
+              detail: {
+                value: maybeParseJson( setup[themeMod] ),
+                id: 'header'
+              }
+            } ) )
+          return false
+        } else {
+          if ( !wp.customize.control( themeMod ) ) return false
+          if ( ['text', 'textarea', 'select'].includes(
+            wp.customize.control( themeMod ).params.type ) ) {
+            wp.customize.control( themeMod ).setting.set( setup[themeMod] )
+            return false
+          }
+
+          document.dispatchEvent(
+            new CustomEvent( 'neve-changed-customizer-value', {
+              detail: {
+                value: setup[themeMod] || '',
+                id: themeMod
+              }
+            } ) )
+        }
+      } )
+      return false
+    }
+    document.dispatchEvent( new CustomEvent( 'neve-preset-changed', {
+      detail: {
+        themeMods: setup
+      }
+    } ) )
+  }
+}
 
 PresetsSelector.propTypes = {
-	presets: PropTypes.array.isRequired,
-	onSelect: PropTypes.func.isRequired,
-};
+  control: PropTypes.object.isRequired
+}
 
-export default PresetsSelector;
+export default PresetsSelector

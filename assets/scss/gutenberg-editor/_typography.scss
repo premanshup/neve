@@ -1,77 +1,51 @@
-
-h1, h2, h3, h4, h5, h6,
-{
-	&.wp-block, & {
-		text-transform: none;
-		font-family: $default-font-family;
-		line-height: $line-height-base;
-		margin-bottom: $headings-margin-bottom;
-		letter-spacing: normal;
-		font-weight: $headings-font-weight;
-		color: var(--nv-text-color);
-	}
-}
-
-h1 {
-	&.wp-block, & {
-		font-size: $h1-mobile-font-size
-	}
-}
-
-h2 {
-	&.wp-block, & {
-		font-size: $h2-mobile-font-size;
-	}
-}
-
-h3 {
-	&.wp-block, & {
-		font-size: $h3-mobile-font-size;
-	}
-}
-
-h4 {
-	&.wp-block, & {
-		font-size: $h4-mobile-font-size;
-	}
-}
-
-h5 {
-	&.wp-block, & {
-		font-size: $h5-mobile-font-size;
-	}
-}
-
-h6 {
-	&.wp-block, & {
-		font-size: $h6-mobile-font-size;
-	}
-}
-
-.wp-block {
+.editor-styles-wrapper {
 	//<editor-fold desc="Fonts">
 	font-size: 16px;
 	font-weight: normal;
 	font-family: $default-font-family;
-  	color: var(--nv-text-color);
-  	line-height: $line-height-base;
+	color: $body-color;
+	line-height: $line-height-base;
 	text-transform: none;
 	letter-spacing: normal;
 
-	&.has-text-color .wp-block {
-	  color: inherit;
-	}
-
-  	&.wp-block-group.has-background {
-	  padding: 0;
-	}
-
-  	&.components-placeholder {
-	  color: initial;
-	}
-
 	strong {
 		font-weight: bold;
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		text-transform: none;
+		font-family: $default-font-family;
+		line-height: $line-height-base;
+		margin: 0 0 $headings-margin-bottom 0;
+		letter-spacing: normal;
+		font-weight: $headings-font-weight;
+		color: $body-color;
+	}
+
+	.editor-writing-flow {
+		h1 {
+			font-size: $h1-mobile-font-size
+		}
+
+		h2 {
+			font-size: $h2-mobile-font-size;
+		}
+
+		h3 {
+			font-size: $h3-mobile-font-size;
+		}
+
+		h4 {
+			font-size: $h4-mobile-font-size;
+		}
+
+		h5 {
+			font-size: $h5-mobile-font-size;
+		}
+
+		h6 {
+			font-size: $h6-mobile-font-size;
+		}
 	}
 
 	//</editor-fold>
@@ -80,7 +54,7 @@ h6 {
 	.editor-post-title__block .editor-post-title__input {
 		font-family: $default-font-family;
 		font-size: $h1-mobile-font-size;
-		color: var(--nv-text-color);
+		color: $body-color;
 		line-height: 1.3em;
 	}
 
@@ -89,7 +63,7 @@ h6 {
 	//<editor-fold desc="Lists">
 	ul, ol {
 		padding-left: $spacing-sm;
-		margin: $spacing-sm auto;
+		margin: $spacing-sm 0;
 
 		li {
 			margin-bottom: $spacing-xs;
@@ -105,20 +79,20 @@ h6 {
 	//<editor-fold desc="Blockquote">
 	blockquote.wp-block-quote {
 		border: none;
-		margin: $spacing auto;
+		margin: $spacing 0;
 		padding: 0;
 
-		&.has-text-align-center {
-			text-align: center;
-		}
+        &.has-text-align-center{
+          text-align: center;
+        }
 
-		&.has-text-align-left {
-			text-align: left;
-		}
+        &.has-text-align-left{
+          text-align: left;
+        }
 
-		&.has-text-align-right {
-			text-align: right;
-		}
+        &.has-text-align-right{
+          text-align: right;
+        }
 
 		p:not(.wp-block-quote__citation) {
 			font-size: 1.1em;
@@ -184,7 +158,7 @@ h6 {
 		pre {
 			display: block;
 			padding: 20px;
-			background: rgba(255,255,255,0.75);
+			background: #fbfbfb;
 			border-radius: 5px;
 			border: 1px solid #f0f0f0;
 			margin: 20px 0;
@@ -194,18 +168,18 @@ h6 {
 			box-sizing: border-box;
 			-webkit-box-sizing: border-box;
 			font-family: monospace;
-			color: var(--nv-text-color);
+			color: $body-color;
 		}
 	}
 
 	//</editor-fold>
 
 	//<editor-fold desc="Link">
-	a:not(.wp-block-button__link) {
-		color: var(--nv-primary-accent);
+	a {
+		color: $link_color;
 
 		&:hover {
-			color: var(--nv-secondary-accent);
+			color: $link_hover_color;
 			text-decoration: none;
 		}
 	}
@@ -225,49 +199,33 @@ h6 {
 }
 
 @mixin gutenberg-typograpgy--tablet() {
-	.wp-block {
+	.editor-styles-wrapper {
 		font-size: $html-font-size;
-	}
-	h1, h1.wp-block, .editor-post-title__block .editor-post-title__input {
-		font-size: $h1-font-size;
-	}
 
-	h2 {
-
-		&.wp-block, & {
-			font-size: $h2-font-size;
+		.editor-writing-flow h1, .editor-post-title__block .editor-post-title__input {
+			font-size: $h1-font-size;
 		}
-	}
 
-	h3 {
+		.editor-writing-flow {
+			h2 {
+				font-size: $h2-font-size;
+			}
 
-		&.wp-block, & {
-			font-size: $h3-font-size;
-		}
-	}
+			h3 {
+				font-size: $h3-font-size;
+			}
 
-	h4 {
+			h4 {
+				font-size: $h4-font-size;
+			}
 
-		&.wp-block, & {
-			font-size: $h4-font-size;
-		}
-	}
+			h5 {
+				font-size: $h5-font-size;
+			}
 
-	h5 {
-
-		&.wp-block, & {
-			font-size: $h5-font-size;
-		}
-	}
-
-	h6 {
-
-		&.wp-block, & {
-			font-size: $h6-font-size;
+			h6 {
+				font-size: $h6-font-size;
+			}
 		}
 	}
 }
-
-
-@import "../main/global_colors";
-

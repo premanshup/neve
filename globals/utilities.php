@@ -34,10 +34,6 @@ function neve_hooks() {
 
 	$hooks = array(
 		'header'     => array(
-			'neve_html_start_before',
-			'neve_head_start_after',
-			'neve_head_end_before',
-			'neve_body_start_after',
 			'neve_before_header_hook',
 			'neve_before_header_wrapper_hook',
 			'neve_after_header_hook',
@@ -46,11 +42,15 @@ function neve_hooks() {
 		'footer'     => array(
 			'neve_before_footer_hook',
 			'neve_after_footer_hook',
-			'neve_body_end_before',
+		),
+		'shop'       => array(
+			'neve_before_cart_popup',
+			'neve_after_cart_popup',
 		),
 		'post'       => array(
 			'neve_before_post_content',
 			'neve_after_post_content',
+			'neve_before_loop',
 		),
 		'page'       => array(
 			'neve_before_page_header',
@@ -65,11 +65,8 @@ function neve_hooks() {
 			'neve_after_sidebar_content',
 		),
 		'blog'       => array(
-			'neve_before_loop',
 			'neve_before_posts_loop',
 			'neve_after_posts_loop',
-			'neve_loop_entry_before',
-			'neve_loop_entry_after',
 			'neve_middle_posts_loop',
 		),
 		'pagination' => array(
@@ -78,14 +75,6 @@ function neve_hooks() {
 	);
 
 	if ( class_exists( 'WooCommerce' ) ) {
-		$hooks['shop']     = array(
-			'neve_before_cart_popup',
-			'neve_after_cart_popup',
-			'woocommerce_before_shop_loop',
-			'woocommerce_after_shop_loop',
-			'woocommerce_before_shop_loop_item',
-			'nv_shop_item_content_after',
-		);
 		$hooks['product']  = array(
 			'woocommerce_before_single_product',
 			'woocommerce_before_single_product_summary',
@@ -173,7 +162,7 @@ function neve_search_icon( $is_link = false, $echo = false, $size = 15, $amp_rea
 
 	$amp_state = '';
 	if ( $amp_ready ) {
-		$amp_state = 'on="tap:AMP.setState({visible: !visible})" role="button" tabindex="0" ';
+		$amp_state = ' on="tap:nv-search-icon-responsive.toggleClass(class=\'active\')" role="button" tabindex="0" ';
 	}
 	$start_tag = $is_link ? 'a href="#"' : 'div';
 	$end_tag   = $is_link ? 'a' : 'div';
@@ -286,7 +275,7 @@ function neve_get_standard_fonts() {
 function neve_get_google_fonts() {
 	return apply_filters(
 		'neve_google_fonts_array',
-		// Updated on 15/09/20
+		// Updated on 02/12/19
 		array(
 			'ABeeZee',
 			'Abel',
@@ -597,7 +586,6 @@ function neve_get_google_fonts() {
 			'Engagement',
 			'Englebert',
 			'Enriqueta',
-			'Epilogue',
 			'Erica One',
 			'Esteban',
 			'Euphoria Script',
@@ -674,11 +662,9 @@ function neve_get_google_fonts() {
 			'Goudy Bookletter 1911',
 			'Graduate',
 			'Grand Hotel',
-			'Grandstander',
 			'Gravitas One',
 			'Great Vibes',
 			'Grenze',
-			'Grenze Gotisch',
 			'Griffy',
 			'Gruppo',
 			'Gudea',
@@ -792,11 +778,9 @@ function neve_get_google_fonts() {
 			'Kristi',
 			'Krona One',
 			'Krub',
-			'Kufam',
 			'Kulim Park',
 			'Kumar One',
 			'Kumar One Outline',
-			'Kumbh Sans',
 			'Kurale',
 			'La Belle Aurore',
 			'Lacquer',
@@ -935,8 +919,6 @@ function neve_get_google_fonts() {
 			'Mukta Malar',
 			'Mukta Vaani',
 			'Muli',
-			'Mulish',
-			'MuseoModerno',
 			'Mystery Quest',
 			'NTR',
 			'Nanum Brush Script',
@@ -1087,10 +1069,8 @@ function neve_get_google_fonts() {
 			'Rasa',
 			'Rationale',
 			'Ravi Prakash',
-			'Recursive',
 			'Red Hat Display',
 			'Red Hat Text',
-			'Red Rose',
 			'Redressed',
 			'Reem Kufi',
 			'Reenie Beanie',
@@ -1112,7 +1092,6 @@ function neve_get_google_fonts() {
 			'Rosario',
 			'Rosarivo',
 			'Rouge Script',
-			'Rowdies',
 			'Rozha One',
 			'Rubik',
 			'Rubik Mono One',
@@ -1187,7 +1166,6 @@ function neve_get_google_fonts() {
 			'Solway',
 			'Song Myung',
 			'Sonsie One',
-			'Sora',
 			'Sorts Mill Goudy',
 			'Source Code Pro',
 			'Source Sans Pro',
@@ -1226,7 +1204,6 @@ function neve_get_google_fonts() {
 			'Suwannaphum',
 			'Swanky and Moo Moo',
 			'Syncopate',
-			'Syne',
 			'Tajawal',
 			'Tangerine',
 			'Taprom',
@@ -1269,7 +1246,6 @@ function neve_get_google_fonts() {
 			'Vampiro One',
 			'Varela',
 			'Varela Round',
-			'Varta',
 			'Vast Shadow',
 			'Vesper Libre',
 			'Viaoda Libre',
@@ -1326,56 +1302,4 @@ function neve_get_headings_selectors() {
 			'h6' => \Neve\Core\Settings\Config::$css_selectors_map[ \Neve\Core\Settings\Config::CSS_SELECTOR_TYPEFACE_H6 ],
 		)
 	);
-}
-
-/**
- * Get Global Colors Default
- *
- * @param bool $migrated get with migrated colors.
- * @return array
- */
-function neve_get_global_colors_default( $migrated = false ) {
-
-	$old_link_color       = get_theme_mod( 'neve_link_color', '#0366d6' );
-	$old_link_hover_color = get_theme_mod( 'neve_link_hover_color', '#0e509a' );
-	$old_text_color       = get_theme_mod( 'neve_text_color', '#393939' );
-	$old_bg_color         = '#' . get_theme_mod( 'background_color', 'ffffff' );
-
-	add_filter( 'theme_mod_background_color', '__return_empty_string' );
-
-	return [
-		'activePalette' => 'base',
-		'palettes'      => [
-			'base'     => [
-				'name'          => __( 'Base', 'neve' ),
-				'allowDeletion' => false,
-				'colors'        => [
-					'nv-primary-accent'   => $migrated ? $old_link_color : '#0366d6',
-					'nv-secondary-accent' => $migrated ? $old_link_hover_color : '#0e509a',
-					'nv-site-bg'          => $migrated ? $old_bg_color : '#ffffff',
-					'nv-light-bg'         => '#ededed',
-					'nv-dark-bg'          => '#14171c',
-					'nv-text-color'       => $migrated ? $old_text_color : '#393939',
-					'nv-text-dark-bg'     => '#ffffff',
-					'nv-c-1'              => '#77b978',
-					'nv-c-2'              => '#f37262',
-				],
-			],
-			'darkMode' => [
-				'name'          => __( 'Dark Mode', 'neve' ),
-				'allowDeletion' => false,
-				'colors'        => [
-					'nv-primary-accent'   => '#26bcdb',
-					'nv-secondary-accent' => '#1f90a6',
-					'nv-site-bg'          => '#121212',
-					'nv-light-bg'         => '#1a1a1a',
-					'nv-dark-bg'          => '#1a1a1a',
-					'nv-text-color'       => '#ffffff',
-					'nv-text-dark-bg'     => 'rgba(255, 255, 255, 0.81)',
-					'nv-c-1'              => '#77b978',
-					'nv-c-2'              => '#f37262',
-				],
-			],
-		],
-	];
 }

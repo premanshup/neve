@@ -1,26 +1,23 @@
-/* global neveDash, fetch */
-/*eslint import/no-unresolved: [2, { ignore: ['@wordpress/api'] }]*/
-import { __ } from '@wordpress/i18n';
-import { loadPromise, models } from '@wordpress/api';
+const {__} = wp.i18n;
 
 export const fetchOptions = () => {
 	let settings;
-	return loadPromise.then(() => {
-		settings = new models.Settings();
+	return wp.api.loadPromise.then(() => {
+		settings = new wp.api.models.Settings();
 		return settings.fetch();
 	});
 };
 
 export const changeOption = (option, value, module = false, pro = true) => {
 	option = (pro ? 'nv_pro_' : '') + option + (module ? '_status' : '');
-	const model = new models.Settings({
-		[option]: value,
+	const model = new wp.api.models.Settings({
+		[option]: value
 	});
 
 	return new Promise((resolve) => {
 		model.save().then((r) => {
-			if (!r || !r[option] === value) {
-				resolve({ success: false });
+			if (! r || ! r[option] === value) {
+				resolve({success: false});
 			}
 			resolve(isValid(option, r));
 		});
@@ -35,19 +32,13 @@ export const get = (route, simple = false, useNonce = true) => {
 	return requestData(route, simple, {}, 'GET', useNonce);
 };
 
-const requestData = async (
-	route,
-	simple = false,
-	data = {},
-	method = 'POST',
-	useNonce = true
-) => {
+const requestData = async (route, simple = false, data = {}, method = 'POST', useNonce = true) => {
 	const options = {
-		method,
+		method: method,
 		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-		},
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
 	};
 
 	if (useNonce) {
@@ -65,12 +56,9 @@ const requestData = async (
 
 const isValid = (option, optionsArray) => {
 	if ('nv_pro_typekit_id' === option) {
-		if (!optionsArray.neve_pro_typekit_data) {
-			return {
-				message: __('Typekit Project ID is invalid', 'neve'),
-				success: false,
-			};
+		if (! optionsArray['neve_pro_typekit_data']) {
+			return {message: __('Typekit Project ID is invalid', 'neve'), success: false};
 		}
 	}
-	return { success: true };
+	return {success: true};
 };

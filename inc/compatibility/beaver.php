@@ -20,14 +20,11 @@ class Beaver extends Page_Builder_Base {
 	 * Init function.
 	 */
 	public function init() {
-		if ( defined( 'FL_BUILDER_VERSION' ) ) {
-			add_filter( 'fl_builder_color_presets', array( $this, 'global_color_presets' ) );
+		if ( ! defined( 'FL_THEME_BUILDER_VERSION' ) ) {
+			return;
 		}
 
-		if ( defined( 'FL_THEME_BUILDER_VERSION' ) ) {
-			add_action( 'wp', array( $this, 'add_theme_builder_hooks' ) );
-			add_filter( 'fl_theme_builder_part_hooks', array( $this, 'register_part_hooks' ) );
-		}
+		add_action( 'wp', array( $this, 'add_theme_builder_hooks' ) );
 	}
 
 	/**
@@ -80,90 +77,5 @@ class Beaver extends Page_Builder_Base {
 			add_action( 'neve_do_footer', 'FLThemeBuilderLayoutRenderer::render_footer' );
 		}
 
-	}
-
-	/**
-	 * Beautify hook names.
-	 *
-	 * @param string $hook Hook name.
-	 *
-	 * @return string
-	 */
-	private function beautify_hook( $hook ) {
-		$hook_label = str_replace( '_', ' ', $hook );
-		$hook_label = str_replace( 'neve', ' ', $hook_label );
-		$hook_label = str_replace( 'woocommerce', ' ', $hook_label );
-		$hook_label = ucwords( $hook_label );
-		return $hook_label;
-	}
-
-	/**
-	 * Mapping function to move from neve_hooks format to the format required by Beaver Builder.
-	 *
-	 * @param string $location Current location, the key of neve_hooks array.
-	 * @param array  $hooks Hooks from that location.
-	 *
-	 * @return array
-	 */
-	private function hook_to_part( $location, $hooks ) {
-		$part = array(
-			'label' => ucfirst( $location ),
-		);
-		foreach ( $hooks as $hook ) {
-			$part['hooks'][ $hook ] = $this->beautify_hook( $hook );
-		}
-		return $part;
-	}
-
-	/**
-	 * Register part hooks for Beaver Themer.
-	 *
-	 * @return array
-	 */
-	public function register_part_hooks() {
-		$hooks = neve_hooks();
-		return array_map( array( $this, 'hook_to_part' ), array_keys( $hooks ), $hooks );
-	}
-
-	/**
-	 * Adds global colors from neve to Beaver Builder color presets.
-	 *
-	 * @param array $colors Color presets.
-	 *
-	 * @return array
-	 */
-	public function global_color_presets( $colors ) {
-
-		$global_colors = get_theme_mod( 'neve_global_colors', neve_get_global_colors_default( true ) );
-
-		if ( empty( $global_colors ) ) {
-			return $colors;
-		}
-
-		if ( ! isset( $global_colors['activePalette'] ) ) {
-			return $colors;
-		}
-
-		$active = $global_colors['activePalette'];
-
-		if ( ! isset( $global_colors['palettes'][ $active ] ) ) {
-			return $colors;
-		}
-
-		$palette = $global_colors['palettes'][ $active ];
-
-		if ( ! isset( $palette['colors'] ) ) {
-			return $colors;
-		}
-
-		$palette_colors = array_values( $palette['colors'] );
-
-		foreach ( $palette_colors as $color ) {
-			if ( ! array_search( $color, $colors, true ) ) {
-				$colors[] = str_replace( '#', '', $color );
-			}
-		}
-
-		return array_values( array_unique( $colors ) );
 	}
 }

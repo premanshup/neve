@@ -1,9 +1,9 @@
-import { Snackbar } from '@wordpress/components';
-import { withDispatch, withSelect } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
-import { compose } from '@wordpress/compose';
-import { __ } from '@wordpress/i18n';
-const GlobalSnackbar = ({ toast, setToast }) => {
+const {Snackbar} = wp.components;
+const {withDispatch, withSelect} = wp.data;
+const {useEffect, useState} = wp.element;
+const {compose} = wp.compose;
+const {__} = wp.i18n;
+const GlobalSnackbar = ({toast, setToast}) => {
 	useEffect(() => {
 		setTimeout(() => {
 			setToast(null);
@@ -12,34 +12,37 @@ const GlobalSnackbar = ({ toast, setToast }) => {
 
 	const message = toast();
 	const style = {
-		opacity: null === message ? 0 : 1,
+		opacity: null === message ? 0 : 1
 	};
-	let renderToast = __('Option Updated', 'neve');
-	if (message === false) {
-		renderToast = __('Could not Update Option. Please try again.', 'neve');
-	}
-	if ('boolean' !== typeof message) {
-		renderToast = toast();
-	}
 
 	return (
 		<div style={style}>
-			<Snackbar className="dash-notice">{renderToast}</Snackbar>
+			<Snackbar
+				className='dash-notice'
+			>
+				{'boolean' === typeof message ?
+					(false === message ?
+						__('Could not Update Option. Please try again.', 'neve') :
+						__('Option Updated', 'neve')) :
+					toast()
+				}
+			</Snackbar>
 		</div>
 	);
 };
 
 export default compose(
 	withDispatch((dispatch) => {
-		const { setToast } = dispatch('neve-dashboard');
+		const {setToast} = dispatch('neve-dashboard');
 		return {
-			setToast: (message) => setToast(message),
+			setToast: (message) => setToast(message)
 		};
 	}),
 	withSelect((select) => {
-		const { getToast } = select('neve-dashboard');
+		const {getToast} = select('neve-dashboard');
 		return {
-			toast: () => getToast(),
+			toast: () => getToast()
 		};
 	})
 )(GlobalSnackbar);
+

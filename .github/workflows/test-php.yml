@@ -4,9 +4,7 @@ on:
   push:
     branches-ignore:
       - 'master'
-env:
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   phplint:
     name: PHP Lint
@@ -80,6 +78,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v1
+        with:
+          path: ~/.wp-content
+          key: ${{ runner.os }}-wpcore
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-cache-v2-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+      - uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
       - name: Get Composer Cache Directory
         id: composer-cache
         run: |
@@ -88,5 +98,5 @@ jobs:
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-      - run: ./bin/envs/init.sh theme-check latest yes
+      - run: ./bin/run-theme-check.sh
 

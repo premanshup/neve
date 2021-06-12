@@ -488,28 +488,13 @@ abstract class Abstract_Component implements Component {
 					'group'                 => $this->get_id(),
 					'tab'                   => SettingsManager::TAB_LAYOUT,
 					'transport'             => $this->is_auto_width ? 'post' . $this->get_builder_id() : 'postMessage',
-					'sanitize_callback'     => [ $this, 'sanitize_alignment' ],
-					'default'               => [
-						'desktop' => $this->default_align,
-						'tablet'  => $this->default_align,
-						'mobile'  => $this->default_align,
-					],
+					'sanitize_callback'     => 'wp_filter_nohtml_kses',
+					'default'               => $this->default_align,
 					'label'                 => __( 'Alignment', 'neve' ),
-					'type'                  => '\Neve\Customizer\Controls\React\Responsive_Radio_Buttons',
+					'type'                  => '\Neve\Customizer\Controls\React\Radio_Buttons',
 					'live_refresh_selector' => $this->is_auto_width ? null : $margin_selector,
 					'live_refresh_css_prop' => [
-						'remove_classes' => [
-							'mobile-left',
-							'mobile-right',
-							'mobile-center',
-							'tablet-left',
-							'tablet-right',
-							'tablet-center',
-							'desktop-left',
-							'desktop-right',
-							'desktop-center',
-						],
-						'is_for'         => 'horizontal',
+						'is_for' => 'horizontal',
 					],
 					'options'               => [
 						'choices' => $align_choices,
@@ -534,7 +519,8 @@ abstract class Abstract_Component implements Component {
 				'type'                  => '\Neve\Customizer\Controls\React\Spacing',
 				'options'               => [
 					'input_attrs' => array(
-						'min' => 0,
+						'min'                   => 0,
+						'hideResponsiveButtons' => true,
 					),
 					'default'     => $this->default_padding_value,
 				],
@@ -557,6 +543,11 @@ abstract class Abstract_Component implements Component {
 				'default'               => $this->default_margin_value,
 				'label'                 => __( 'Margin', 'neve' ),
 				'type'                  => '\Neve\Customizer\Controls\React\Spacing',
+				'options'               => [
+					'input_attrs' => array(
+						'hideResponsiveButtons' => true,
+					),
+				],
 				'live_refresh_selector' => $margin_selector,
 				'live_refresh_css_prop' => array(
 					'prop' => 'margin',
@@ -606,6 +597,8 @@ abstract class Abstract_Component implements Component {
 				'panel'              => $this->panel,
 			)
 		);
+
+		$wp_customize->register_section_type( '\HFG\Core\Customizer\Instructions_Section' );
 
 		Settings\Manager::get_instance()->load( $this->get_id(), $wp_customize );
 
@@ -766,10 +759,10 @@ abstract class Abstract_Component implements Component {
 		$priority       = 2000;
 
 		if ( $this->has_typeface_control ) {
-			$accordion_wrap ++;
+			$accordion_wrap += 1;
 		}
 		if ( $this->has_font_family_control ) {
-			$accordion_wrap ++;
+			$accordion_wrap += 1;
 		}
 
 		SettingsManager::get_instance()->add(
@@ -895,54 +888,5 @@ abstract class Abstract_Component implements Component {
 				'section'               => $this->section,
 			]
 		);
-	}
-
-	/**
-	 * Get the item height default.
-	 *
-	 * @return array
-	 */
-	protected function get_default_for_responsive_from_intval( $old_val_const, $default_int_val ) {
-		$old = get_theme_mod( $this->get_id() . '_' . $old_val_const );
-		if ( $old === false ) {
-			return [
-				'mobile'  => $default_int_val,
-				'tablet'  => $default_int_val,
-				'desktop' => $default_int_val,
-			];
-		}
-		return [
-			'mobile'  => $old,
-			'tablet'  => $old,
-			'desktop' => $old,
-		];
-	}
-
-	/**
-	 * Sanitize alignment.
-	 *
-	 * @param array $input alignment responsive array.
-	 *
-	 * @return array
-	 */
-	public function sanitize_alignment( $input ) {
-		$default = [
-			'mobile'  => 'left',
-			'tablet'  => 'left',
-			'desktop' => 'left',
-		];
-		$allowed = [ 'left', 'center', 'right', 'justify' ];
-
-		if ( ! is_array( $input ) ) {
-			return $default;
-		}
-
-		foreach ( $input as $device => $alignment ) {
-			if ( ! in_array( $alignment, $allowed ) ) {
-				$input[ $device ] = 'left';
-			}
-		}
-
-		return $input;
 	}
 }

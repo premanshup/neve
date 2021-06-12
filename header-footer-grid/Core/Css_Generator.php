@@ -13,4 +13,7 @@ class Css_Generator extends Generator {
 	public function __construct() {
 		$this->_subscribers = [];
 	}
+	public function set( $subscribers ) {
+		$this->_subscribers = $subscribers;
+	}
 }

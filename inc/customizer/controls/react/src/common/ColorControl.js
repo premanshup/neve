@@ -1,105 +1,66 @@
-import PropTypes from 'prop-types';
-import GlobalColorsPicker from '../common/GlobalColorsPicker';
-// we can add back ColorPicker here when issue https://github.com/WordPress/gutenberg/issues/30798 is resolved
-import { Button, Dropdown } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
-import classnames from 'classnames';
+/* global wp */
+import PropTypes from 'prop-types'
+import classnames from 'classnames'
 
-import ColorPickerFix from './ColorPickerFix';
+const { ColorPicker, Button, Dropdown } = wp.components
+const { Component, Fragment } = wp.element
+const { __ } = wp.i18n
 
-const ColorControl = ({
-	label,
-	selectedColor,
-	onChange,
-	defaultValue,
-	disableGlobal,
-}) => {
-	let toggle = null;
+class ColorControl extends Component {
+  render() {
+    const { label, selectedColor } = this.props
+    let toggle = null
+    return (
+      <div className='neve-control-header neve-color-component'>
+        {
+          label &&
+            <span className='customize-control-title'>
+              {label}
+            </span>
+        }
 
-	const handleChange = (value) => {
-		const { r, g, b, a } = value.rgb;
-		if (a < 1) {
-			onChange(`rgba(${r}, ${g}, ${b}, ${a})`);
-			return false;
-		}
-		onChange(value.hex);
-	};
-
-	const isGlobal = selectedColor && selectedColor.indexOf('var') > -1;
-
-	const handleClear = () => {
-		onChange(defaultValue || '');
-		toggle();
-	};
-
-	const wrapClasses = classnames([
-		'neve-control-header',
-		'neve-color-component',
-		{ 'allows-global': !disableGlobal },
-	]);
-
-	return (
-		<div className={wrapClasses}>
-			{label && <span className="customize-control-title">{label}</span>}
-			{!disableGlobal && (
-				<GlobalColorsPicker
-					isGlobal={isGlobal}
-					activeColor={selectedColor}
-					onChange={onChange}
-				/>
-			)}
-			<Dropdown
-				renderToggle={({ isOpen, onToggle }) => {
-					toggle = onToggle;
-					return (
-						<Button
-							isSecondary
-							onClick={onToggle}
-							aria-expanded={isOpen}
-							aria-label={__('Color', 'neve')}
-						>
-							<span
-								className="color"
-								style={{ backgroundColor: selectedColor }}
-							/>
-							<span className="gradient" />
-						</Button>
-					);
-				}}
-				renderContent={() => (
-					<>
-						{/* eslint-disable-next-line  jsx-a11y/anchor-has-content */}
-						<a href="#color-picker" />
-						<ColorPickerFix
-							color={selectedColor}
-							onChangeComplete={handleChange}
-						/>
-						{selectedColor && (
-							<Button
-								className="clear"
-								isPrimary
-								onClick={handleClear}
-							>
-								{__('Clear', 'neve')}
-							</Button>
-						)}
-					</>
-				)}
-			/>
-		</div>
-	);
-};
-
-ColorControl.defaultProps = {
-	disableGlobal: false,
-};
+        <Dropdown
+          renderToggle={( { isOpen, onToggle } ) => {
+            toggle = onToggle
+            return (
+              <Button
+                className={classnames(['is-secondary is-button', { 'is-empty': !selectedColor }])}
+                onClick={onToggle}
+                aria-expanded={isOpen}
+                style={{ backgroundColor: selectedColor }}
+              />
+            )
+          }}
+          renderContent={() => (
+            <Fragment>
+              <ColorPicker
+                color={selectedColor}
+                onChangeComplete={( value ) => { this.props.onChange(value.hex) }}
+                disableAlpha
+              />
+              {selectedColor &&
+                <Button
+                  className='clear'
+                  isPrimary
+                  onClick={() => {
+                    this.props.onChange('')
+                    toggle()
+                  }}
+                >
+                  {__( 'Clear', 'neve' )}
+                </Button>}
+            </Fragment>
+          )}
+        />
+      </div>
+    )
+  }
+}
 
 ColorControl.propTypes = {
-	label: PropTypes.string,
-	onChange: PropTypes.func.isRequired,
-	selectedColor: PropTypes.string,
-	defaultValue: PropTypes.string,
-	disableGlobal: PropTypes.bool,
-};
+  label: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  selectedColor: PropTypes.string.isRequired
+}
 
-export default ColorControl;
+export default ColorControl

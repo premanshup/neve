@@ -1,4 +1,6 @@
 @media (min-width: #{$tablet}) {
+  @include ob-starter-site-card--tablet();
+  @include ob-header--tablet();
 }
 
 @media (min-width: #{$laptop}) {
@@ -11,6 +13,8 @@
   @include license-card--laptop();
   @include free-pro--laptop();
   @include mock--laptop();
+  @include ob-starter-site-card--laptop();
+  @include ob-general--laptop();
 }
 
 
@@ -21,7 +25,6 @@
   @include card--desktop();
   @include notifications--desktop();
   @include plugins--desktop();
-  @include help--desktop();
   @include accordion--desktop();
   @include mock--desktop();
 }

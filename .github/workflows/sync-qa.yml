@@ -1,9 +1,10 @@
-name: Deploy to stagings
+name: Deploy to QA
+
 on:
   push:
     branches:
       - development
-      - "!master"
+      - '!master'
 jobs:
   deploy:
     name: Deploy to QA server
@@ -15,62 +16,27 @@ jobs:
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
       QA_ROOT: ${{ secrets.QA_ROOT }}
-      STG_DEMOSITES_ROOT: ${{ secrets.STG_DEMOSITES_ROOT }}
-      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-      CYPRESS_INSTALL_BINARY: 0
     steps:
       - uses: actions/checkout@master
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v2
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Build dist
+      - name: Build
         run: |
+          npm ci
           composer install --no-dev --prefer-dist --no-progress --no-suggest
-          yarn install --frozen-lockfile
-          yarn run build
-          yarn run dist
-      - name: Authenticate
+          npm run build
+      - name: Add SSH Key
         run: |
           mkdir $HOME/.ssh
           echo "$SSH_KEY" > "$HOME/.ssh/key"
           chmod 600 "$HOME/.ssh/key"
-      - uses: chrnorm/deployment-action@releases/v1
-        name: Create deployment
-        id: deployment
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          target_url: http://qa-neve.themeisle.com/empty-site
-          environment: staging
-      - name: Deploy to QA env
-        run: >
-          rsync -rc --delete --exclude-from="$GITHUB_WORKSPACE/.distignore" -e "ssh -i
-          $HOME/.ssh/key -o StrictHostKeyChecking=no -p $SSH_PORT"
-          "$GITHUB_WORKSPACE/dist/neve/" $SSH_USERNAME@$SSH_HOST:$QA_ROOT
-      - name: Deploy to staging of demosites.io env
-        run: >
-          rsync -rc --delete --exclude-from="$GITHUB_WORKSPACE/.distignore" -e "ssh -i
-          $HOME/.ssh/key -o StrictHostKeyChecking=no -p $SSH_PORT"
-          "$GITHUB_WORKSPACE/dist/neve/" "${SSH_USERNAME}@${SSH_HOST}:${STG_DEMOSITES_ROOT}themes/neve/"
-      - name: Rebuild Neve Reference
-        run: >
-          ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no
-          $SSH_USERNAME@$SSH_HOST "bash ~/reset-neve-qa.sh"
-      - name: Update deployment status (success)
-        if: success()
-        uses: chrnorm/deployment-status@releases/v1
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          target_url: http://qa-neve.themeisle.com/empty-site
-          state: success
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+      - name: Deploy to QA
+        run: |
+          rsync -rc --exclude-from="$GITHUB_WORKSPACE/.distignore" -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no -p $SSH_PORT" "$GITHUB_WORKSPACE/" $SSH_USERNAME@$SSH_HOST:$QA_ROOT
+      - name: Trigger Diffy Job
+        run: |
+          bash bin/diffy.sh $GITHUB_SHA ${{ secrets.DIFFY_API_KEY }} ${{ secrets.DIFFY_PROJECT_ID }}
   empty-job:
+    # if no jobs run, github action considers it a test failure -- which seems like a bug
+    # this makes it so the top-level if statement for the job does not give status failure.
     runs-on: ubuntu-latest
     if: success()
     steps:

@@ -1,79 +1,75 @@
-/* global NeveProperties */
 /* jshint esversion: 6 */
-import { addEvent, addClass, removeClass } from '../utils.js';
+import {
+	addEvent,
+	addClass,
+	removeClass,
+	neveEach
+} from '../utils.js';
 
-export const HFG = function () {
+export let HFG = function() {
 	this.options = {
-		menuToggleDuration: 300,
+		menuToggleDuration: 300
 	};
 	this.init();
 };
 
 /**
  * Init mobile sidebar.
- *
- * @param {boolean} skipSidebar
  */
-HFG.prototype.init = function (skipSidebar = false) {
-	if (skipSidebar === false) {
-		const closeButtons = document.querySelectorAll(
-			'.close-sidebar-panel .navbar-toggle'
-		);
-		addEvent(closeButtons, 'click', () => {
-			this.toggleMenuSidebar(false);
-		});
+HFG.prototype.init = function(skipSidebar = false) {
+
+	let selector = '.menu-mobile-toggle';
+
+	if ( skipSidebar === false ) {
+		selector += ', #header-menu-sidebar .close-panel, .close-sidebar-panel';
 	}
 
-	const menuMobileToggleButtons = document.querySelectorAll(
-		'.menu-mobile-toggle'
-	);
-	addEvent(menuMobileToggleButtons, 'click', () => {
-		this.toggleMenuSidebar(true);
-	});
+	let menuMobileToggleButtons = document.querySelectorAll( selector );
+	let handleToggle = function(e) {
+		e.preventDefault();
+		this.toggleMenuSidebar();
+	};
+
+	/**
+	 * When click to toggle buttons.
+	 */
+	neveEach(menuMobileToggleButtons, function(item) {
+		item.removeEventListener( 'click', handleToggle.bind( this ) );
+	}.bind( this ) );
+
+	addEvent( menuMobileToggleButtons, 'click', handleToggle.bind( this ) );
 
 	/**
 	 * When click to outside of menu sidebar.
 	 */
-	const overlay = document.querySelector('.header-menu-sidebar-overlay');
-	addEvent(
-		overlay,
-		'click',
-		function () {
-			this.toggleMenuSidebar(false);
-		}.bind(this)
+	let overlay = document.querySelector( '.header-menu-sidebar-overlay' );
+	addEvent( overlay, 'click', function() {
+				this.toggleMenuSidebar( false );
+			}.bind( this )
 	);
 };
 
 /**
  * Toggle menu sidebar.
  *
- * @param {boolean} toggle
+ * @param toggle
  */
-HFG.prototype.toggleMenuSidebar = function (toggle) {
-	const buttons = document.querySelectorAll('.menu-mobile-toggle');
-	removeClass(document.body, 'hiding-header-menu-sidebar');
+HFG.prototype.toggleMenuSidebar = function(toggle) {
+	let buttons = document.querySelectorAll( '.menu-mobile-toggle' );
+	removeClass( document.body, 'hiding-header-menu-sidebar' );
 
-	if (
-		(!NeveProperties.isCustomize &&
-			document.body.classList.contains('is-menu-sidebar')) ||
-		toggle === false
-	) {
-		const navClickaway = document.querySelector('.nav-clickaway-overlay');
-		if (navClickaway !== null) {
-			navClickaway.parentNode.removeChild(navClickaway);
-		}
-		addClass(document.body, 'hiding-header-menu-sidebar');
-		removeClass(document.body, 'is-menu-sidebar');
-		removeClass(buttons, 'is-active');
+	if ( document.body.classList.contains( 'is-menu-sidebar' ) ||
+			toggle === false ) {
+		addClass( document.body, 'hiding-header-menu-sidebar' );
+		removeClass( document.body, 'is-menu-sidebar' );
+		removeClass( buttons, 'is-active' );
 		// Remove the hiding class after 1 second.
-		setTimeout(
-			function () {
-				removeClass(document.body, 'hiding-header-menu-sidebar');
-			}.bind(this),
-			1000
-		);
+		setTimeout( function() {
+			removeClass( document.body, 'hiding-header-menu-sidebar' );
+		}.bind( this ), 1000 );
 	} else {
-		addClass(document.body, 'is-menu-sidebar');
-		addClass(buttons, 'is-active');
+		addClass( document.body, 'is-menu-sidebar' );
+		addClass( buttons, 'is-active' );
 	}
 };
+
