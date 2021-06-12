@@ -77,14 +77,6 @@ jobs:
     name: Theme Check
     runs-on: ubuntu-latest
     steps:
-      - name: Make run-e2e executable
-        run: chmod +x ./bin/run-e2e.sh
-      - name: Make cli-setup executable
-        run: chmod +x ./bin/cli-setup.sh
-      - name: Make run-theme-check executable
-        run: chmod +x ./bin/run-theme-check.sh
-      - name: Make install-theme-check executable
-        run: chmod +x ./bin/install-theme-check.sh
       - uses: actions/checkout@v2
       - uses: actions/cache@v1
         with:
@@ -106,5 +98,13 @@ jobs:
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+      - name: Make run-e2e executable
+        run: chmod +x ./bin/run-e2e.sh
+      - name: Make cli-setup executable
+        run: chmod +x ./bin/cli-setup.sh
+      - name: Make run-theme-check executable
+        run: chmod +x ./bin/run-theme-check.sh
+      - name: Make install-theme-check executable
+        run: chmod +x ./bin/install-theme-check.sh
       - run: ./bin/run-theme-check.sh
 
