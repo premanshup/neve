@@ -25,7 +25,6 @@ $container_classes[] = 'nav-menu-secondary';
 		wp_nav_menu(
 			array(
 				'theme_location' => 'top-bar',
-				'menu_class'     => 'nav-ul',
 				'menu_id'        => 'secondary-menu',
 				'container'      => 'ul',
 				'depth'          => - 1,

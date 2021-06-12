@@ -43,7 +43,7 @@
       }
     }
     .nav-direction {
-			color: var(--nv-text-color);
+      color: $gray-color;
       display: flex;
       flex-direction: column;
       font-size: 0.8em;
@@ -95,9 +95,15 @@
     padding: 2px $spacing-xs;
     transition: $transition_med;
     border-radius: 3px;
-		margin: 0 $spacing-xs $spacing-xs 0;
-		color: var(--nv-primary-accent);
-    border: 1px solid var(--nv-primary-accent);
+    margin-bottom: $spacing-xs;
+    margin-right: $spacing-xs;
+    border: 1px solid $button_color;
+    color: $button_color;
+    &:hover {
+      background: $button_color;
+      border-color: $button-color;
+      color: #fff;
+    }
   }
 }
 

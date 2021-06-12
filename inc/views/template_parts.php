@@ -42,13 +42,17 @@ class Template_Parts extends Base_View {
 	 * Echo the post class.
 	 */
 	private function post_class() {
-		$class  = join( ' ', get_post_class() );
-		$layout = $this->get_layout();
-		$class .= ' layout-' . $layout;
-		if ( in_array( $layout, [ 'grid', 'covers' ], true ) ) {
+		$class = join( ' ', get_post_class() );
+
+		$box_shadow = (int) $this->get_box_shadow();
+		if ( $box_shadow !== 0 ) {
+			$class .= ' nv-shadow-' . $box_shadow;
+		}
+		$class .= ' col-12 layout-' . $this->get_layout();
+		if ( $this->get_layout() === 'grid' ) {
 			$class .= ' ' . $this->get_grid_columns_class();
 		} else {
-			$class .= ' col-12 nv-non-grid-article';
+			$class .= ' nv-non-grid-article';
 		}
 		return $class;
 	}
@@ -61,39 +65,66 @@ class Template_Parts extends Base_View {
 	private function get_article_inner_content() {
 		$markup = '';
 
-		$layout = $this->get_layout();
-
-		if ( in_array( $layout, [ 'alternative', 'default' ] ) ) {
+		if ( $this->get_layout() !== 'grid' ) {
 			$markup .= $this->get_post_thumbnail();
-			$markup .= '<div class="non-grid-content ' . esc_attr( $layout ) . '-layout-content">';
-			$markup .= $this->get_ordered_content_parts( true );
-			$markup .= '</div>';
-
-			return $markup;
-		}
-
-		if ( $layout === 'covers' ) {
-			$default_order = array(
-				'thumbnail',
-				'title-meta',
-				'excerpt',
+			$markup .= '<div class="non-grid-content ' . esc_attr( $this->get_layout() ) . '-layout-content">';
+			$markup .= $this->get_title();
+			$markup .= $this->get_meta();
+			$markup .= $this->get_excerpt();
+			$markup .= wp_link_pages(
+				array(
+					'before'      => '<div class="post-pages-links"><span>' . apply_filters( 'neve_page_link_before', esc_html__( 'Pages:', 'neve' ) ) . '</span>',
+					'after'       => '</div>',
+					'link_before' => '<span class="page-link">',
+					'link_after'  => '</span>',
+					'echo'        => false,
+				)
 			);
-			$order         = json_decode( get_theme_mod( 'neve_post_content_ordering', wp_json_encode( $default_order ) ) );
-			$style         = '';
-			if ( in_array( 'thumbnail', $order, true ) ) {
-				$thumb  = get_the_post_thumbnail_url();
-				$style .= ! empty( $thumb ) ? 'background-image: url(' . esc_url( $thumb ) . ')' : '';
-			}
-			$markup .= '<div class="cover-post nv-post-thumbnail-wrap" style="' . esc_attr( $style ) . '">';
-			$markup .= '<div class="inner">';
-			$markup .= $this->get_ordered_content_parts( true );
-			$markup .= '</div>';
 			$markup .= '</div>';
 
 			return $markup;
 		}
 
-		return $this->get_ordered_content_parts();
+		$default_order = array(
+			'thumbnail',
+			'title-meta',
+			'excerpt',
+		);
+		$order         = get_theme_mod( 'neve_post_content_ordering', wp_json_encode( $default_order ) );
+		$order         = json_decode( $order, true );
+		foreach ( $order as $content_bit ) {
+			switch ( $content_bit ) {
+				case 'thumbnail':
+					$markup .= $this->get_post_thumbnail();
+					break;
+				case 'title':
+					$markup .= $this->get_title();
+					break;
+				case 'meta':
+					$markup .= $this->get_meta();
+					break;
+				case 'title-meta':
+					$markup .= $this->get_title();
+					$markup .= $this->get_meta();
+					break;
+				case 'excerpt':
+					$markup .= $this->get_excerpt();
+					$markup .= wp_link_pages(
+						array(
+							'before'      => '<div class="post-pages-links"><span>' . apply_filters( 'neve_page_link_before', esc_html__( 'Pages:', 'neve' ) ) . '</span>',
+							'after'       => '</div>',
+							'link_before' => '<span class="page-link">',
+							'link_after'  => '</span>',
+							'echo'        => false,
+						)
+					);
+					break;
+				default:
+					break;
+			}
+		}
+
+		return $markup;
 	}
 
 	/**
@@ -105,17 +136,6 @@ class Template_Parts extends Base_View {
 		if ( ! has_post_thumbnail() ) {
 			return '';
 		}
-
-		global $neve_thumbnail_skip_lazy_added;
-
-		/** This filter is documented in header-footer-grid/templates/components/component-logo.php */
-		$should_add_skip_lazy = apply_filters( 'neve_skip_lazy', true );
-		$image_class          = '';
-		if ( $should_add_skip_lazy && ! isset( $neve_thumbnail_skip_lazy_added ) ) {
-			$image_class                    = 'skip-lazy';
-			$neve_thumbnail_skip_lazy_added = true;
-		}
-
 		$markup = '<div class="nv-post-thumbnail-wrap">';
 
 		$markup .= '<a href="' . esc_url( get_the_permalink() ) . '" rel="bookmark" title="' . the_title_attribute(
@@ -123,16 +143,21 @@ class Template_Parts extends Base_View {
 				'echo' => false,
 			)
 		) . '">';
-
 		$markup .= get_the_post_thumbnail(
 			get_the_ID(),
-			'neve-blog',
-			array( 'class' => $image_class )
+			'neve-blog'
 		);
 		$markup .= '</a>';
 		$markup .= '</div>';
 
-		return apply_filters( 'neve_blog_post_thumbnail_markup', $markup );
+		return $markup;
+	}
+
+	/**
+	 * Get box shadow type.
+	 */
+	private function get_box_shadow() {
+		return get_theme_mod( 'neve_post_thumbnail_box_shadow', 0 );
 	}
 
 	/**
@@ -141,17 +166,7 @@ class Template_Parts extends Base_View {
 	 * @return string
 	 */
 	private function get_layout() {
-		$layout = get_theme_mod( 'neve_blog_archive_layout', 'grid' );
-
-		if ( $layout !== 'default' ) {
-			return $layout;
-		}
-
-		if ( get_theme_mod( 'neve_blog_list_alternative_layout', false ) === true ) {
-			$layout = 'alternative';
-		}
-
-		return $layout;
+		return get_theme_mod( 'neve_blog_archive_layout', 'grid' );
 	}
 
 	/**
@@ -186,8 +201,7 @@ class Template_Parts extends Base_View {
 		);
 
 		$meta_order = get_theme_mod( 'neve_post_meta_ordering', $default_meta_order );
-
-		$meta_order = is_string( $meta_order ) ? json_decode( $meta_order ) : $meta_order;
+		$meta_order = json_decode( $meta_order );
 
 		ob_start();
 		do_action( 'neve_post_meta_archive', $meta_order );
@@ -215,32 +229,12 @@ class Template_Parts extends Base_View {
 	 * @return string
 	 */
 	private function get_grid_columns_class() {
-		$classes    = '';
-		$columns    = get_theme_mod(
-			'neve_grid_layout',
-			wp_json_encode(
-				[
-					'desktop' => 1,
-					'tablet'  => 1,
-					'mobile'  => 1,
-				]
-			)
-		);
-		$columns    = json_decode( $columns, true );
-		$device_map = [
-			'desktop' => 'md',
-			'tablet'  => 'sm',
-			'mobile'  => '',
-		];
-
-		foreach ( $columns as $device => $column_number ) {
-			if ( $column_number === 0 || empty( $column_number ) ) {
-				$column_number = 1;
-			}
-			$classes .= ' col-' . ( $device !== 'mobile' ? $device_map[ $device ] . '-' : '' ) . ( 12 / absint( $column_number ) );
+		$column_numbers = get_theme_mod( 'neve_grid_layout', 1 );
+		if ( $column_numbers === 0 ) {
+			$column_numbers = 1;
 		}
 
-		return $classes;
+		return 'col-sm-' . ( 12 / absint( $column_numbers ) );
 	}
 
 	/**
@@ -280,58 +274,5 @@ class Template_Parts extends Base_View {
 		$new_moretag .= $markup;
 
 		return $new_moretag;
-	}
-
-	/**
-	 * Get ordered content parts.
-	 *
-	 * @param bool $exclude_thumbnail exclude thumbnail from order.
-	 * @return string
-	 */
-	private function get_ordered_content_parts( $exclude_thumbnail = false ) {
-		$markup        = '';
-		$default_order = array(
-			'thumbnail',
-			'title-meta',
-			'excerpt',
-		);
-		$order         = get_theme_mod( 'neve_post_content_ordering', wp_json_encode( $default_order ) );
-		$order         = json_decode( $order, true );
-		foreach ( $order as $content_bit ) {
-			switch ( $content_bit ) {
-				case 'thumbnail':
-					if ( $exclude_thumbnail ) {
-						break;
-					}
-					$markup .= $this->get_post_thumbnail();
-					break;
-				case 'title':
-					$markup .= $this->get_title();
-					break;
-				case 'meta':
-					$markup .= $this->get_meta();
-					break;
-				case 'title-meta':
-					$markup .= $this->get_title();
-					$markup .= $this->get_meta();
-					break;
-				case 'excerpt':
-					$markup .= $this->get_excerpt();
-					$markup .= wp_link_pages(
-						array(
-							'before'      => '<div class="post-pages-links"><span>' . apply_filters( 'neve_page_link_before', esc_html__( 'Pages:', 'neve' ) ) . '</span>',
-							'after'       => '</div>',
-							'link_before' => '<span class="page-link">',
-							'link_after'  => '</span>',
-							'echo'        => false,
-						)
-					);
-					break;
-				default:
-					break;
-			}
-		}
-
-		return $markup;
 	}
 }

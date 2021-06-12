@@ -17,18 +17,17 @@
 }
 
 a.neve-skip-link {
+  background-color: $git-black;
+  color: #fff;
   padding: $spacing-xs $spacing-sm;
-	top: 32px;
-}
 
+  &:focus {
+    color: #fff;
+  }
 
-.screen-reader-text {
-	position:absolute;
-	left:-10000px;
-	top:auto;
-	width:1px;
-	height:1px;
-	overflow:hidden;
+  .admin-bar & {
+    top: 32px;
+  }
 }
 
 //<editor-fold desc="Underline links in content and comments content">

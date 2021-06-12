@@ -75,6 +75,7 @@
 }
 
 .neve-white-background-control {
+  border: 1px solid #ccc;
   padding: 10px;
   background: #fff;
 }
@@ -116,19 +117,4 @@
   &.active .svg-text {
 	fill: $accent-color;
   }
-}
-
-.components-modal__screen-overlay {
-	z-index: 1000000;
-}
-
-.neve-ui-modal-wrap {
-	.components-tooltip {
-		display: none;
-	}
-
-	img {
-		display: block;
-		width: 100%;
-	}
 }

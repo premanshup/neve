@@ -1,14 +1,13 @@
 .woocommerce .woocommerce-breadcrumb {
   margin-bottom: 0;
   font-size: 1em;
-	color: var(--nv-text-color);
-	opacity: .75;
-	a {
-		color: var(--nv-text-color);
-	}
+  a {
+    color: $gray-color;
+  }
   .nv-breadcrumb-delimiter {
     opacity: .5;
     padding: 0 5px;
+
   }
 }
 

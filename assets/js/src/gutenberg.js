@@ -1,7 +1,8 @@
+
 wp.domReady(() => {
 	const { __ } = wp.i18n;
-	wp.blocks.unregisterBlockStyle('core/button', 'fill');
-	wp.blocks.unregisterBlockStyle('core/button', 'outline');
+	wp.blocks.unregisterBlockStyle('core/button','fill');
+	wp.blocks.unregisterBlockStyle('core/button','outline');
 
 	wp.blocks.registerBlockStyle('core/button', {
 		name: 'default',
@@ -18,4 +19,7 @@ wp.domReady(() => {
 		label: __('Secondary'),
 		isDefault: false,
 	});
+
+
 });
+

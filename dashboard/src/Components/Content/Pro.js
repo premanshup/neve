@@ -2,13 +2,13 @@
 import ModuleCard from '../ModuleCard';
 
 const Pro = () => {
-	const { modules, hasOldPro, strings } = neveDash;
+	const {modules} = neveDash;
 
-	if (hasOldPro) {
+	if (neveDash.hasOldPro) {
 		return (
 			<div className="col">
 				<div className="card">
-					<h2>{strings.updateOldPro}</h2>
+					<h2>{neveDash.strings.updateOldPro}</h2>
 				</div>
 			</div>
 		);
@@ -16,9 +16,13 @@ const Pro = () => {
 
 	return (
 		<div className="col">
-			{Object.keys(modules).map((id, index) => {
-				return <ModuleCard key={index} slug={id} />;
-			})}
+			{
+				Object.keys(modules).map((id) => {
+					return (
+						<ModuleCard slug={id}/>
+					);
+				})
+			}
 		</div>
 	);
 };

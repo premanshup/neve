@@ -1,56 +1,48 @@
 /* global neveDash */
-import { addUrlHash, getTabHash, tabs } from '../utils/common';
+import {addUrlHash, getTabHash, tabs} from '../utils/common';
 import classnames from 'classnames';
 
-import { __ } from '@wordpress/i18n';
-import { useEffect } from '@wordpress/element';
+const {__} = wp.i18n;
+const {useEffect} = wp.element;
 
 const Header = (props) => {
 	useEffect(() => {
 		const hash = getTabHash();
 		if (null === hash) {
-			return;
+			return false;
 		}
 		props.setTab(hash);
 	}, []);
+
 
 	const renderHead = () => {
 		return (
 			<div className="top">
 				<h1 className="heading">{neveDash.strings.header}</h1>
 				<span className="version">{neveDash.version}</span>
-				{!neveDash.whiteLabel && (
-					<img
-						src={neveDash.assets + '/logo.svg'}
-						alt={__('Neve Theme Logo', 'neve')}
-					/>
-				)}
+				{! neveDash.whiteLabel &&
+				<img src={neveDash.assets + '/logo.svg'} alt={__('Neve Theme Logo', 'neve')}/>
+				}
 			</div>
 		);
 	};
 
 	const renderNavigation = () => {
-		const { currentTab, setTab } = props;
+		const {currentTab, setTab} = props;
 		return (
 			<nav className="navigation">
-				{Object.keys(tabs).map((item, index) => {
+				{Object.keys(tabs).map((item) => {
 					return (
-						<li key={index}>
-							<a
-								href={'#' + item}
-								className={classnames([
-									item,
-									currentTab === item ? 'active' : '',
-								])}
-								onClick={(e) => {
-									e.preventDefault();
-									setTab(item);
-									addUrlHash(item);
-								}}
-							>
-								{tabs[item].label}
-							</a>
-						</li>
+						<li><a
+							href="#"
+							className={classnames([ item, currentTab === item ? 'active' : '' ])}
+							onClick={(e) => {
+								e.preventDefault();
+								setTab(item);
+								addUrlHash(item);
+							}}
+						>{tabs[item].label}
+						</a></li>
 					);
 				})}
 			</nav>
