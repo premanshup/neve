@@ -173,9 +173,6 @@
 		"size": "size-limit",
 		"lint:package-json": "wp-scripts lint-pkg-json './package.json'",
 		"pre-commit": "npm-run-all phpcs build size",
-		"release": "npx semantic-release",
-		"dist": "bash ./bin/dist.sh",
-		"storybook": "start-storybook -p 6006",
-		"build-storybook": "build-storybook"
+		"release": "npx semantic-release"
 	}
 }

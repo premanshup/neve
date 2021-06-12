@@ -4,15 +4,6 @@ WP_VERSION=${2-latest}
 SKIP_CACHE=${3-no}
 ZIP_URL=${4}
 
-if [ ! -n "$ZIP_URL" ]
-then
-	yarn install --frozen-lockfile
-	# Install dependencies.
-	composer install --no-dev
-	yarn run build
-	yarn run dist
-	ZIP_URL="/tmp/repo/neve/artifact/neve.zip"
-fi
 export DOCKER_FILE=docker-compose.ci.yml
 
 # Bring stack up.
