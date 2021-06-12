@@ -1,8 +1,3 @@
-#!/usr/bin/env bash
-
-# Install dependencies.
-composer install --no-dev
-
 export DOCKER_FILE=docker-compose.ci.yml
 
 # Bring stack up.
