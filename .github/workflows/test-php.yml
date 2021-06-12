@@ -4,9 +4,7 @@ on:
   push:
     branches-ignore:
       - 'master'
-env:
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   themecheck:
     name: Theme Check

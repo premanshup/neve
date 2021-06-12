@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 WP_ENV=${1-default}
 WP_VERSION=${2-latest}
 SKIP_CACHE=${3-no}
